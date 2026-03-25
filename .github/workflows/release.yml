@@ -63,6 +63,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${{ steps.bump.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
             --title "${{ steps.bump.outputs.tag }}" \
             --generate-notes \
             --draft \
@@ -95,7 +96,7 @@ jobs:
       - name: Upload binary to release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ needs.release.outputs.tag }} ${{ matrix.artifact }}
+        run: gh release upload "${{ needs.release.outputs.tag }}" "${{ matrix.artifact }}" --repo "${{ github.repository }}"
 
   publish:
     name: Publish release
