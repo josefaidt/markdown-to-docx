@@ -1,5 +1,5 @@
 import type { Tokens } from "marked"
-import { AlignmentType, Paragraph, Table, TableCell, TableRow, WidthType } from "docx"
+import { AlignmentType, ImportedXmlComponent, Paragraph, Table, TableCell, TableRow } from "docx"
 import { inlineTokensToRuns } from "./inline"
 
 interface ParsedTableCell {
@@ -58,9 +58,19 @@ export function buildTable(token: Tokens.Generic): Table {
     )
   }
 
-  return new Table({
+  const table = new Table({
     rows,
-    style: "GridTable1Light",
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    style: "TableGridLight",
   })
+  // The docx library mis-serializes WidthType.PERCENTAGE as e.g. "5000%" and always
+  // emits tblBorders even when a named style owns them. Patch the TableProperties root
+  // directly to replace the broken width element and strip the redundant borders.
+  const tblPr = (table as unknown as { root: { root: unknown[] }[] }).root[0]
+  tblPr.root = tblPr.root.filter((el) => {
+    const name = (el as { rootKey?: string }).rootKey
+    return name !== "w:tblW" && name !== "w:tblBorders"
+  })
+  const tblW = (ImportedXmlComponent.fromXmlString('<w:tblW w:w="5000" w:type="pct"/>') as unknown as { root: unknown[] }).root[0]
+  tblPr.root.push(tblW)
+  return table
 }

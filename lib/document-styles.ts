@@ -1,5 +1,5 @@
 import type { INumberingOptions, IPropertiesOptions } from "docx"
-import { AlignmentType, BorderStyle, LevelFormat, ShadingType, convertInchesToTwip } from "docx"
+import { AlignmentType, BorderStyle, ImportedXmlComponent, LevelFormat, ShadingType, convertInchesToTwip } from "docx"
 import { listIndent } from "./list"
 
 interface FontSizes {
@@ -168,6 +168,32 @@ export function buildStyleOptions(
           name: "Hyperlink",
           run: { color: "0563C1", underline: {} },
         },
+      ],
+      importedStyles: [
+        // fromXmlString returns a wrapper root; extract the inner w:style element
+        (ImportedXmlComponent.fromXmlString(
+          `<w:style w:type="table" w:styleId="TableGridLight">
+            <w:name w:val="Grid Table Light"/>
+            <w:basedOn w:val="TableNormal"/>
+            <w:uiPriority w:val="40"/>
+            <w:tblPr>
+              <w:tblBorders>
+                <w:top w:val="single" w:sz="4" w:space="0" w:color="BFBFBF" w:themeColor="background1" w:themeShade="BF"/>
+                <w:left w:val="single" w:sz="4" w:space="0" w:color="BFBFBF" w:themeColor="background1" w:themeShade="BF"/>
+                <w:bottom w:val="single" w:sz="4" w:space="0" w:color="BFBFBF" w:themeColor="background1" w:themeShade="BF"/>
+                <w:right w:val="single" w:sz="4" w:space="0" w:color="BFBFBF" w:themeColor="background1" w:themeShade="BF"/>
+                <w:insideH w:val="single" w:sz="4" w:space="0" w:color="BFBFBF" w:themeColor="background1" w:themeShade="BF"/>
+                <w:insideV w:val="single" w:sz="4" w:space="0" w:color="BFBFBF" w:themeColor="background1" w:themeShade="BF"/>
+              </w:tblBorders>
+              <w:tblCellMar>
+                <w:top w:w="0" w:type="dxa"/>
+                <w:left w:w="108" w:type="dxa"/>
+                <w:bottom w:w="0" w:type="dxa"/>
+                <w:right w:w="108" w:type="dxa"/>
+              </w:tblCellMar>
+            </w:tblPr>
+          </w:style>`,
+        ) as unknown as { root: ImportedXmlComponent[] }).root[0],
       ],
     },
   }
