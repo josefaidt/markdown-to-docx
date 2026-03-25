@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prepatch
+          - preminor
+          - premajor
+          - prerelease
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Release
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.bump.outputs.tag }}
+    steps:
+      - uses: ./.github/actions/setup
+        with:
+          fetch-depth: 0
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Bump version
+        id: bump
+        run: |
+          TAG=$(bun x --bun npm version ${{ github.event.inputs.bump }} --message "release: %s")
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+      - name: Stamp README
+        run: |
+          TAG="${{ steps.bump.outputs.tag }}"
+          VERSION="${TAG#v}"
+          USAGE=$(bun run bin/markdown-to-docx.ts --help 2>&1 || true)
+          perl -i -0pe "s|<!-- BEGIN USAGE -->.*<!-- END USAGE -->|<!-- BEGIN USAGE -->\n\`\`\`\n${USAGE}\n\`\`\`\n<!-- END USAGE -->|s" README.md
+          sed -i "s|\"ref\": \".*\"|\"ref\": \"${TAG}\"|g" README.md
+          sed -i "s|<!-- LATEST_TAG: .* -->|<!-- LATEST_TAG: ${TAG} -->|" README.md
+          sed -i "s|\"version\": \".*\"|\"version\": \"${VERSION}\"|" .claude-plugin/plugin.json
+          git add README.md .claude-plugin/plugin.json
+          git commit --amend --no-edit
+          git tag -f "$TAG"
+      - name: Push
+        run: |
+          git push origin HEAD:main
+          git push origin "${{ steps.bump.outputs.tag }}"
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.bump.outputs.tag }}" \
+            --title "${{ steps.bump.outputs.tag }}" \
+            --generate-notes \
+            --draft \
+            scripts/install.sh
+
+  build:
+    name: Build (${{ matrix.target }})
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: bun-linux-x64
+            artifact: markdown-to-docx-linux-x64
+          - target: bun-linux-arm64
+            artifact: markdown-to-docx-linux-arm64
+          - target: bun-darwin-x64
+            artifact: markdown-to-docx-darwin-x64
+          - target: bun-darwin-arm64
+            artifact: markdown-to-docx-darwin-arm64
+          - target: bun-windows-x64
+            artifact: markdown-to-docx-windows-x64.exe
+    steps:
+      - uses: ./.github/actions/setup
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+      - name: Build
+        run: bun build --compile --target=${{ matrix.target }} --outfile=${{ matrix.artifact }} bin/markdown-to-docx.ts
+      - name: Upload binary to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload ${{ needs.release.outputs.tag }} ${{ matrix.artifact }}
+
+  publish:
+    name: Publish release
+    needs: [release, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Promote draft to published
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit "${{ needs.release.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --draft=false

@@ -1,0 +1,284 @@
+import type { INumberingOptions, IPropertiesOptions } from "docx"
+import { AlignmentType, BorderStyle, LevelFormat, ShadingType, convertInchesToTwip } from "docx"
+import { listIndent } from "./list"
+
+interface FontSizes {
+  normal: number
+  heading1: number
+  heading2: number
+  heading3: number
+  heading456: number
+  codeBlock: number
+  footerText: number
+  codeBlockSpacing: number
+  listSpacing: number
+}
+
+function fontSizes(basePt: number): FontSizes {
+  const hp = (pt: number) => pt * 2
+  return {
+    normal: hp(basePt),
+    heading1: hp(basePt + 23),
+    heading2: hp(basePt + 10),
+    heading3: hp(basePt + 6),
+    heading456: hp(basePt + 3),
+    codeBlock: hp(basePt),
+    footerText: hp(basePt - 3),
+    codeBlockSpacing: hp(6),
+    listSpacing: hp(4),
+  }
+}
+
+export function buildStyleOptions(
+  basePt: number,
+  externalStylesXml?: string,
+): Pick<IPropertiesOptions, "externalStyles" | "styles"> {
+  if (externalStylesXml) {
+    return { externalStyles: externalStylesXml }
+  }
+
+  const sizes = fontSizes(basePt)
+
+  return {
+    styles: {
+      paragraphStyles: [
+        {
+          id: "Normal",
+          name: "Normal",
+          run: { font: "Aptos", size: sizes.normal, color: "333333" },
+          paragraph: { spacing: { after: 160, line: 276 } },
+        },
+        {
+          id: "Heading1",
+          name: "Heading 1",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { size: sizes.heading1, bold: true },
+          paragraph: { spacing: { before: 0, after: 240 } },
+        },
+        {
+          id: "Heading2",
+          name: "Heading 2",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { size: sizes.heading2, bold: true },
+          paragraph: { spacing: { before: 360, after: 160 } },
+        },
+        {
+          id: "Heading3",
+          name: "Heading 3",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { size: sizes.heading3, bold: true },
+          paragraph: { spacing: { before: 300, after: 120 } },
+        },
+        {
+          id: "Heading4",
+          name: "Heading 4",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { size: sizes.heading456, bold: true },
+          paragraph: { spacing: { before: 240, after: 80 } },
+        },
+        {
+          id: "Heading5",
+          name: "Heading 5",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { size: sizes.heading456, bold: true, italics: true },
+          paragraph: { spacing: { before: 240, after: 80 } },
+        },
+        {
+          id: "Heading6",
+          name: "Heading 6",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { size: sizes.heading456, underline: {} },
+          paragraph: { spacing: { before: 240, after: 80 } },
+        },
+        {
+          id: "ListItem",
+          name: "List Item",
+          basedOn: "Normal",
+          next: "ListItem",
+          paragraph: { spacing: { before: 0, after: 80, line: 276 } },
+        },
+        {
+          id: "Blockquote",
+          name: "Blockquote",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { italics: true, color: "777777" },
+          paragraph: {
+            spacing: { before: 240, after: 80, line: 276, lineRule: "auto" as const },
+            indent: { left: convertInchesToTwip(0.15) },
+            border: {
+              left: { style: BorderStyle.SINGLE, size: 24, color: "A6A6A6", space: 6 },
+            },
+          },
+        },
+        {
+          id: "CodeBlock",
+          name: "Code Block",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { font: "Consolas", size: sizes.codeBlock, color: "555555" },
+          paragraph: { spacing: { before: 0, after: 0, line: 240 } },
+        },
+        {
+          id: "CodeBlockSpacing",
+          name: "Code Block Spacing",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { size: sizes.codeBlockSpacing },
+          paragraph: { spacing: { before: 0, after: 0, line: 240 } },
+        },
+        {
+          id: "ListSpacing",
+          name: "List Spacing",
+          basedOn: "Normal",
+          next: "Normal",
+          run: { size: sizes.listSpacing },
+          paragraph: { spacing: { before: 0, after: 0, line: 240 } },
+        },
+        {
+          id: "FooterText",
+          name: "Footer Text",
+          basedOn: "Normal",
+          paragraph: { spacing: { before: 0, after: 0 } },
+          run: { size: sizes.footerText, color: "888888" },
+        },
+      ],
+      characterStyles: [
+        {
+          id: "lineNumber",
+          name: "Line Number",
+          run: { color: "888888" },
+        },
+        {
+          id: "InlineCode",
+          name: "Inline Code",
+          run: {
+            font: "Consolas",
+            shading: { type: ShadingType.CLEAR, color: "F2F2F2", fill: "F2F2F2" },
+          },
+        },
+        {
+          id: "Hyperlink",
+          name: "Hyperlink",
+          run: { color: "0563C1", underline: {} },
+        },
+      ],
+    },
+  }
+}
+
+export function buildNumbering(): INumberingOptions {
+  const ll = [0, 1, 2, 3, 4, 5].map((level) => listIndent(level)) as [
+    ReturnType<typeof listIndent>,
+    ReturnType<typeof listIndent>,
+    ReturnType<typeof listIndent>,
+    ReturnType<typeof listIndent>,
+    ReturnType<typeof listIndent>,
+    ReturnType<typeof listIndent>,
+  ]
+
+  return {
+    config: [
+      {
+        reference: "ordered-numbering",
+        levels: [
+          {
+            level: 0,
+            format: LevelFormat.DECIMAL,
+            text: "%1.",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[0] } },
+          },
+          {
+            level: 1,
+            format: LevelFormat.LOWER_LETTER,
+            text: "%2.",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[1] } },
+          },
+          {
+            level: 2,
+            format: LevelFormat.LOWER_ROMAN,
+            text: "%3.",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[2] } },
+          },
+          {
+            level: 3,
+            format: LevelFormat.DECIMAL,
+            text: "%4.",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[3] } },
+          },
+          {
+            level: 4,
+            format: LevelFormat.LOWER_LETTER,
+            text: "%5.",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[4] } },
+          },
+          {
+            level: 5,
+            format: LevelFormat.LOWER_ROMAN,
+            text: "%6.",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[5] } },
+          },
+        ],
+      },
+      {
+        reference: "bullet-numbering",
+        levels: [
+          {
+            level: 0,
+            format: LevelFormat.BULLET,
+            text: "\u2022",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[0] }, run: { font: "Aptos" } },
+          },
+          {
+            level: 1,
+            format: LevelFormat.BULLET,
+            text: "\u25e6",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[1] }, run: { font: "Aptos" } },
+          },
+          {
+            level: 2,
+            format: LevelFormat.BULLET,
+            text: "\u25aa",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[2] }, run: { font: "Aptos" } },
+          },
+          {
+            level: 3,
+            format: LevelFormat.BULLET,
+            text: "\u2022",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[3] }, run: { font: "Aptos" } },
+          },
+          {
+            level: 4,
+            format: LevelFormat.BULLET,
+            text: "\u25e6",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[4] }, run: { font: "Aptos" } },
+          },
+          {
+            level: 5,
+            format: LevelFormat.BULLET,
+            text: "\u25aa",
+            alignment: AlignmentType.LEFT,
+            style: { paragraph: { indent: ll[5] }, run: { font: "Aptos" } },
+          },
+        ],
+      },
+    ],
+  }
+}

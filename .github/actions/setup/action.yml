@@ -1,0 +1,21 @@
+name: Setup
+description: Checkout, install Bun, and install dependencies
+
+inputs:
+  fetch-depth:
+    description: Number of commits to fetch
+    default: '1'
+  ref:
+    description: The branch, tag or SHA to checkout
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        ref: ${{ inputs.ref }}
+    - uses: oven-sh/setup-bun@v2
+    - run: bun ci
+      shell: bash

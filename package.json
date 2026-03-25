@@ -1,0 +1,33 @@
+{
+  "name": "@josefaidt/markdown-to-docx",
+  "version": "0.1.0",
+  "bin": {
+    "markdown-to-docx": "./bin/markdown-to-docx.ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./lib/markdown-to-docx.ts"
+  },
+  "scripts": {
+    "build": "bun build --compile --outfile build/markdown-to-docx bin/markdown-to-docx.ts",
+    "generate-template": "bun run scripts/generate-template.ts",
+    "test": "bun test",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
+  },
+  "dependencies": {
+    "docx": "^9.0.4",
+    "marked": "^16.0.0",
+    "probe-image-size": "^7.2.3"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/probe-image-size": "^7.2.5",
+    "jszip": "^3.10.1",
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
+    "typescript": "^5.9.3"
+  }
+}

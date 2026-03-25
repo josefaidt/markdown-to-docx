@@ -1,0 +1,7 @@
+# no claude
+.claude*
+skills
+# no github
+.github*
+# no ox
+.ox*
