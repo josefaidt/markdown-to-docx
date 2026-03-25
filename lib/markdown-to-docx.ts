@@ -298,8 +298,8 @@ export async function convertMarkdownToDocx(
     footerChildren.push(new TextRun({ children: [new Tab()] }))
     footerChildren.push(new TextRun({ children: [PageNumber.CURRENT] }))
   }
-  // A4 default (11906 twips wide) minus 1" left + 1" right margins = 9026 twips text width
-  const textWidthTwip = 11906 - 1440 - 1440
+  // A4 default (11906 twips wide) minus 0.75" left + 0.75" right margins (Moderate) = 9826 twips text width
+  const textWidthTwip = 11906 - 1080 - 1080
   const footer = new Footer({
     children: [
       new Paragraph({
@@ -322,6 +322,14 @@ export async function convertMarkdownToDocx(
           ...(options.lineNumbers
             ? { lineNumbers: { countBy: 1, restart: LineNumberRestartFormat.CONTINUOUS } }
             : {}),
+          page: {
+            margin: {
+              top: convertInchesToTwip(1),
+              bottom: convertInchesToTwip(1),
+              left: convertInchesToTwip(0.75),
+              right: convertInchesToTwip(0.75),
+            },
+          },
         },
         children: elements,
       },
