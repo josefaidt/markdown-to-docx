@@ -7,8 +7,7 @@ Convert Markdown files to Word (`.docx`) documents. Format heavily inspired by [
 ## Usage
 
 <!-- BEGIN USAGE -->
-
-```text
+```
 Usage: markdown-to-docx <input.md> [output.docx] [options]
 
 Arguments:
@@ -22,9 +21,9 @@ Options:
   --page-numbers     Add a right-aligned page number to the footer
   --font-size <n>    Base font size in pt; all styles scale from this (default: 12)
   --line-numbers     Enable Word's built-in document line numbering
+  --version          Print the version number
   --help             Show this help message
 ```
-
 <!-- END USAGE -->
 
 ## Install
