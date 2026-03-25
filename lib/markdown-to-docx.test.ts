@@ -44,11 +44,11 @@ async function headerFiles(zip: JSZip): Promise<Record<string, string>> {
 }
 
 describe("footer", () => {
-  test("has a right-aligned tab stop at 6.5 inches (9360 twips)", async () => {
+  test("has a right-aligned tab stop at text width (9746 twips for Moderate margins)", async () => {
     const { xml } = await buildDocx("# Hello", { footerLabel: "My Label" })
     const footer = await xml("word/footer1.xml")
     expect(footer).toContain('w:val="right"')
-    expect(footer).toContain('w:pos="9360"')
+    expect(footer).toContain('w:pos="9746"')
   })
 
   test("renders the footer label text", async () => {
@@ -58,7 +58,7 @@ describe("footer", () => {
   })
 
   test("page number field appears after the tab, not inline with the label", async () => {
-    const { xml } = await buildDocx("# Hello", { footerLabel: "Left Side" })
+    const { xml } = await buildDocx("# Hello", { footerLabel: "Left Side", footerPageNumber: true })
     const footer = await xml("word/footer1.xml")
 
     const labelPos = footer.indexOf("Left Side")
@@ -74,30 +74,30 @@ describe("footer", () => {
   })
 
   test("page number uses PAGE field instruction", async () => {
-    const { xml } = await buildDocx("# Hello", { footerLabel: "Footer" })
+    const { xml } = await buildDocx("# Hello", { footerLabel: "Footer", footerPageNumber: true })
     const footer = await xml("word/footer1.xml")
     expect(footer).toContain(">PAGE<")
   })
 
   test("label and page number are in the same paragraph", async () => {
-    const { xml } = await buildDocx("# Hello", { footerLabel: "Footer" })
+    const { xml } = await buildDocx("# Hello", { footerLabel: "Footer", footerPageNumber: true })
     const footer = await xml("word/footer1.xml")
     const paragraphs = footer.match(/<w:p[ >]/g) ?? []
     expect(paragraphs).toHaveLength(1)
   })
 
   test("page number is present even without a footerLabel", async () => {
-    const { xml } = await buildDocx("# Hello")
+    const { xml } = await buildDocx("# Hello", { footerPageNumber: true })
     const footer = await xml("word/footer1.xml")
     expect(footer).toContain(">PAGE<")
   })
 
   test("label text is absent when footerLabel is not provided", async () => {
-    const { xml } = await buildDocx("# Hello")
+    const { xml } = await buildDocx("# Hello", { footerPageNumber: true })
     const footer = await xml("word/footer1.xml")
-    // Only the PAGE run should be present; no stray label text run
+    // Only the tab + PAGE runs should be present; no stray label text run
     const runs = footer.match(/<w:r>/g) ?? []
-    expect(runs).toHaveLength(1)
+    expect(runs).toHaveLength(2)
   })
 
   test("label and page number runs share the same font size via FooterText style", async () => {
@@ -108,7 +108,7 @@ describe("footer", () => {
   })
 
   test("footer appears on the first page when a header is configured", async () => {
-    const { zip } = await buildDocx("# Hello", { headerLabel: "My Header" })
+    const { zip } = await buildDocx("# Hello", { headerLabel: "My Header", footerPageNumber: true })
     const docXml = await zip.file("word/document.xml")!.async("string")
     // A first-page footer reference must exist alongside the default one
     expect(docXml).toContain('w:footerReference w:type="first"')
