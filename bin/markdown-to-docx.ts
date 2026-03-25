@@ -104,7 +104,9 @@ function parseArgs(args: string[]): {
   const flags = filteredArgs.filter((a) => a.startsWith("--"))
   const positional = filteredArgs.filter((a) => !a.startsWith("--"))
 
-  const unknownFlags = flags.filter((f) => f !== "--line-numbers" && f !== "--page-numbers" && f !== "--help" && f !== "--version")
+  const unknownFlags = flags.filter(
+    (f) => f !== "--line-numbers" && f !== "--page-numbers" && f !== "--help" && f !== "--version",
+  )
   if (unknownFlags.length > 0) {
     process.stderr.write(`Unknown flag(s): ${unknownFlags.join(", ")}\n${USAGE}\n`)
     return null
@@ -126,7 +128,13 @@ function parseArgs(args: string[]): {
     inputPath: resolvedInput,
     outputPath: resolvedOutput,
     templatePath,
-    options: { lineNumbers: flags.includes("--line-numbers"), footerPageNumber: flags.includes("--page-numbers"), headerLabel, footerLabel, fontSize },
+    options: {
+      lineNumbers: flags.includes("--line-numbers"),
+      footerPageNumber: flags.includes("--page-numbers"),
+      headerLabel,
+      footerLabel,
+      fontSize,
+    },
   }
 }
 

@@ -66,9 +66,7 @@ async function tokensToDocx(
         const runs = inlineTokensToRuns(inlineTokens)
         elements.push(
           new Paragraph({
-            children: slug
-              ? [new Bookmark({ id: slug, children: runs })]
-              : runs,
+            children: slug ? [new Bookmark({ id: slug, children: runs })] : runs,
             style: HEADING_STYLES[(token["depth"] as number | undefined) ?? 1] ?? "Heading1",
           }),
         )
@@ -165,7 +163,9 @@ async function tokensToDocx(
             ],
           }),
         )
-        elements.push(new Paragraph({ text: "", style: "CodeBlockSpacing", suppressLineNumbers: true }))
+        elements.push(
+          new Paragraph({ text: "", style: "CodeBlockSpacing", suppressLineNumbers: true }),
+        )
         break
       }
 
@@ -181,7 +181,9 @@ async function tokensToDocx(
 
       case "table": {
         elements.push(buildTable(token))
-        elements.push(new Paragraph({ text: "", style: "CodeBlockSpacing", suppressLineNumbers: true }))
+        elements.push(
+          new Paragraph({ text: "", style: "CodeBlockSpacing", suppressLineNumbers: true }),
+        )
         break
       }
 
