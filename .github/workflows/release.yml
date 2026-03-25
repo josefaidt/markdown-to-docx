@@ -30,9 +30,10 @@ jobs:
     outputs:
       tag: ${{ steps.bump.outputs.tag }}
     steps:
-      - uses: ./.github/actions/setup
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/setup
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
@@ -86,9 +87,10 @@ jobs:
           - target: bun-windows-x64
             artifact: markdown-to-docx-windows-x64.exe
     steps:
-      - uses: ./.github/actions/setup
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.release.outputs.tag }}
+      - uses: ./.github/actions/setup
       - name: Build
         run: bun build --compile --target=${{ matrix.target }} --outfile=${{ matrix.artifact }} bin/markdown-to-docx.ts
       - name: Upload binary to release
