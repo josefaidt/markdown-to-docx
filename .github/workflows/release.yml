@@ -51,8 +51,7 @@ jobs:
           perl -i -0pe "s|<!-- BEGIN USAGE -->.*<!-- END USAGE -->|<!-- BEGIN USAGE -->\n\`\`\`\n${USAGE}\n\`\`\`\n<!-- END USAGE -->|s" README.md
           sed -i "s|\"ref\": \".*\"|\"ref\": \"${TAG}\"|g" README.md
           sed -i "s|<!-- LATEST_TAG: .* -->|<!-- LATEST_TAG: ${TAG} -->|" README.md
-          sed -i "s|\"version\": \".*\"|\"version\": \"${VERSION}\"|" .claude-plugin/plugin.json
-          git add README.md .claude-plugin/plugin.json
+          git add README.md
           git commit --amend --no-edit
           git tag -f "$TAG"
       - name: Push
