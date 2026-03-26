@@ -70,6 +70,21 @@ describe("inlineTokensToRuns", () => {
     expect(runs[0]).not.toBeInstanceOf(ExternalHyperlink)
   })
 
+  test("`--flag` codespan — double-dash is not converted to em dash", () => {
+    const runs = parseInline("`--some-flag`")
+    expect(runs).toHaveLength(1)
+    const run = runs[0] as TextRun
+    const wt = (run as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("--some-flag")
+  })
+
+  test("plain text -- double-dash is converted to em dash", () => {
+    const runs = parseInline("foo -- bar")
+    expect(runs).toHaveLength(1)
+    const wt = ((runs[0] as TextRun) as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("foo \u2014 bar")
+  })
+
   test("empty token list → empty array", () => {
     expect(inlineTokensToRuns([])).toHaveLength(0)
   })

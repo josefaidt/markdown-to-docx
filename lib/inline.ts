@@ -35,7 +35,7 @@ export function inlineTokensToRuns(tokens: Tokens.Generic[], ctx: InlineCtx = {}
         runs.push(...inlineTokensToRuns(children ?? [], { ...ctx, italics: true }))
         break
       case "codespan":
-        runs.push(new TextRun({ text: text ?? "", ...ctx, style: "InlineCode" }))
+        runs.push(new TextRun({ text: rawText ?? "", ...ctx, style: "InlineCode" }))
         break
       case "link": {
         const linkText =
