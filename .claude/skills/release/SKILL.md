@@ -15,10 +15,10 @@ Ask the user which bump type to use if not provided: `patch`, `minor`, `major`, 
 gh workflow run release.yml --field bump=<bump>
 ```
 
-Then follow the run:
+This returns a URL with the ID of the action run. Watch the the run:
 
 ```bash
-gh run watch --exit-status
+gh run watch <id> --exit-status
 ```
 
 ## Alternative: release locally
