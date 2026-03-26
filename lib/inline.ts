@@ -1,5 +1,5 @@
 import type { Tokens } from "marked"
-import { ExternalHyperlink, InternalHyperlink, TextRun } from "docx"
+import { ExternalHyperlink, InternalHyperlink, ShadingType, TextRun } from "docx"
 
 export type InlineChild = TextRun | ExternalHyperlink | InternalHyperlink
 
@@ -35,7 +35,14 @@ export function inlineTokensToRuns(tokens: Tokens.Generic[], ctx: InlineCtx = {}
         runs.push(...inlineTokensToRuns(children ?? [], { ...ctx, italics: true }))
         break
       case "codespan":
-        runs.push(new TextRun({ text: rawText ?? "", ...ctx, style: "InlineCode" }))
+        runs.push(
+          new TextRun({
+            text: rawText ?? "",
+            ...ctx,
+            style: "InlineCode",
+            shading: { type: ShadingType.CLEAR, color: "F2F2F2", fill: "F2F2F2" },
+          }),
+        )
         break
       case "link": {
         const linkText =
