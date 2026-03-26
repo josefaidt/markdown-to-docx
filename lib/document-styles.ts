@@ -61,7 +61,7 @@ export function buildStyleOptions(
           basedOn: "Normal",
           next: "Normal",
           run: { size: sizes.heading1, bold: true },
-          paragraph: { spacing: { before: 320, after: 160 } },
+          paragraph: { spacing: { after: 160 } },
         },
         {
           id: "Heading2",
