@@ -16,6 +16,7 @@ export function listItemsToParagraphs(
   items: Tokens.Generic[],
   ordered: boolean,
   level: number,
+  orderedRef: string,
 ): Paragraph[] {
   const paragraphs: Paragraph[] = []
 
@@ -42,7 +43,7 @@ export function listItemsToParagraphs(
         style: "ListItem",
         children: inlineTokensToRuns(inlineTokens),
         numbering: {
-          reference: ordered ? "ordered-numbering" : "bullet-numbering",
+          reference: ordered ? orderedRef : "bullet-numbering",
           level,
         },
       }),
@@ -54,6 +55,7 @@ export function listItemsToParagraphs(
           (nested["items"] as Tokens.Generic[] | undefined) ?? [],
           (nested["ordered"] as boolean | undefined) ?? false,
           level + 1,
+          orderedRef,
         ),
       )
     }

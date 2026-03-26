@@ -352,9 +352,9 @@ describe("code blocks", () => {
 })
 
 describe("tables", () => {
-  test("table uses Grid Table 1 Light built-in style", async () => {
+  test("table uses Table Grid Light built-in style", async () => {
     const body = await bodyXml("| A | B |\n|---|---|\n| 1 | 2 |")
-    expect(body).toContain('w:val="GridTable1Light"')
+    expect(body).toContain('w:val="TableGridLight"')
   })
 
   test("table header row has tblHeader set", async () => {
@@ -371,7 +371,7 @@ describe("tables", () => {
   test("table uses full-width percentage layout", async () => {
     const body = await bodyXml("| A |\n|---|\n| x |")
     expect(body).toContain('w:type="pct"')
-    expect(body).toContain('w:w="100%"')
+    expect(body).toContain('w:w="5000"')
   })
 })
 

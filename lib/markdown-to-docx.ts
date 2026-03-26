@@ -49,8 +49,9 @@ const HEADING_STYLES: Record<number, string> = {
 async function tokensToDocx(
   tokens: Tokens.Generic[],
   markdownPath: string,
-): Promise<Array<Paragraph | Table>> {
+): Promise<{ elements: Array<Paragraph | Table>; orderedRefs: string[] }> {
   const elements: Array<Paragraph | Table> = []
+  const orderedRefs: string[] = []
   let firstAppendix = true
 
   for (const token of tokens) {
@@ -113,11 +114,18 @@ async function tokensToDocx(
       }
 
       case "list": {
+        const ordered = (token["ordered"] as boolean | undefined) ?? false
+        let orderedRef = "ordered-numbering"
+        if (ordered) {
+          orderedRef = `ordered-numbering-${orderedRefs.length + 1}`
+          orderedRefs.push(orderedRef)
+        }
         elements.push(
           ...listItemsToParagraphs(
             (token["items"] as Tokens.Generic[] | undefined) ?? [],
-            (token["ordered"] as boolean | undefined) ?? false,
+            ordered,
             0,
+            orderedRef,
           ),
         )
         elements.push(new Paragraph({ text: "", style: "ListSpacing", suppressLineNumbers: true }))
@@ -242,7 +250,7 @@ async function tokensToDocx(
     }
   }
 
-  return elements
+  return { elements, orderedRefs }
 }
 
 export interface ConvertOptions {
@@ -266,7 +274,7 @@ export async function convertMarkdownToDocx(
   const content = await Bun.file(markdownPath).text()
   const { body, data } = parseFrontmatter(content)
   const tokens = marked.lexer(body) as Tokens.Generic[]
-  const elements = await tokensToDocx(tokens, markdownPath)
+  const { elements, orderedRefs } = await tokensToDocx(tokens, markdownPath)
 
   // CLI flags take precedence; frontmatter.title is the fallback for headerLabel
   const headerLabel =
@@ -314,7 +322,7 @@ export async function convertMarkdownToDocx(
 
   return new Document({
     ...buildStyleOptions(options.fontSize ?? 12, options.externalStylesXml),
-    numbering: buildNumbering(),
+    numbering: buildNumbering(orderedRefs),
     sections: [
       {
         ...headerSection,

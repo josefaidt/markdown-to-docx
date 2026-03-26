@@ -199,7 +199,7 @@ export function buildStyleOptions(
   }
 }
 
-export function buildNumbering(): INumberingOptions {
+export function buildNumbering(orderedRefs: string[] = []): INumberingOptions {
   const ll = [0, 1, 2, 3, 4, 5].map((level) => listIndent(level)) as [
     ReturnType<typeof listIndent>,
     ReturnType<typeof listIndent>,
@@ -209,55 +209,18 @@ export function buildNumbering(): INumberingOptions {
     ReturnType<typeof listIndent>,
   ]
 
+  const orderedLevels = [
+    { level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[0] } } },
+    { level: 1, format: LevelFormat.LOWER_LETTER, text: "%2.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[1] } } },
+    { level: 2, format: LevelFormat.LOWER_ROMAN, text: "%3.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[2] } } },
+    { level: 3, format: LevelFormat.DECIMAL, text: "%4.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[3] } } },
+    { level: 4, format: LevelFormat.LOWER_LETTER, text: "%5.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[4] } } },
+    { level: 5, format: LevelFormat.LOWER_ROMAN, text: "%6.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[5] } } },
+  ]
+
   return {
     config: [
-      {
-        reference: "ordered-numbering",
-        levels: [
-          {
-            level: 0,
-            format: LevelFormat.DECIMAL,
-            text: "%1.",
-            alignment: AlignmentType.LEFT,
-            style: { paragraph: { indent: ll[0] } },
-          },
-          {
-            level: 1,
-            format: LevelFormat.LOWER_LETTER,
-            text: "%2.",
-            alignment: AlignmentType.LEFT,
-            style: { paragraph: { indent: ll[1] } },
-          },
-          {
-            level: 2,
-            format: LevelFormat.LOWER_ROMAN,
-            text: "%3.",
-            alignment: AlignmentType.LEFT,
-            style: { paragraph: { indent: ll[2] } },
-          },
-          {
-            level: 3,
-            format: LevelFormat.DECIMAL,
-            text: "%4.",
-            alignment: AlignmentType.LEFT,
-            style: { paragraph: { indent: ll[3] } },
-          },
-          {
-            level: 4,
-            format: LevelFormat.LOWER_LETTER,
-            text: "%5.",
-            alignment: AlignmentType.LEFT,
-            style: { paragraph: { indent: ll[4] } },
-          },
-          {
-            level: 5,
-            format: LevelFormat.LOWER_ROMAN,
-            text: "%6.",
-            alignment: AlignmentType.LEFT,
-            style: { paragraph: { indent: ll[5] } },
-          },
-        ],
-      },
+      ...orderedRefs.map((reference) => ({ reference, levels: orderedLevels })),
       {
         reference: "bullet-numbering",
         levels: [
