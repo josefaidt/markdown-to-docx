@@ -9,6 +9,7 @@
     ".": "./lib/markdown-to-docx.ts"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .git-hooks",
     "build": "bun build --compile --outfile build/markdown-to-docx bin/markdown-to-docx.ts",
     "generate-template": "bun run scripts/generate-template.ts",
     "test": "bun test",
