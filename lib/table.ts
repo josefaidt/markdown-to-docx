@@ -1,5 +1,13 @@
 import type { Tokens } from "marked"
-import { AlignmentType, ImportedXmlComponent, Paragraph, Table, TableCell, TableRow } from "docx"
+import {
+  AlignmentType,
+  ImportedXmlComponent,
+  Paragraph,
+  Table,
+  TableCell,
+  TableRow,
+  VerticalAlignTable,
+} from "docx"
 import { inlineTokensToRuns } from "./inline"
 
 interface ParsedTableCell {
@@ -20,21 +28,24 @@ function cellAlignType(
 export function buildTable(token: Tokens.Generic): Table {
   const rows: TableRow[] = []
 
+  const cellParagraph = (cell: ParsedTableCell, bold = false) =>
+    new Paragraph({
+      children: inlineTokensToRuns(cell.tokens, { bold }),
+      alignment: cellAlignType(cell.align),
+      spacing: { after: 0 },
+    })
+
+  const tableCell = (cell: ParsedTableCell, bold = false) =>
+    new TableCell({
+      children: [cellParagraph(cell, bold)],
+      verticalAlign: VerticalAlignTable.CENTER,
+    })
+
   const header = token["header"] as ParsedTableCell[] | undefined
   if (header && header.length > 0) {
     rows.push(
       new TableRow({
-        children: header.map(
-          (cell) =>
-            new TableCell({
-              children: [
-                new Paragraph({
-                  children: inlineTokensToRuns(cell.tokens),
-                  alignment: cellAlignType(cell.align),
-                }),
-              ],
-            }),
-        ),
+        children: header.map((cell) => tableCell(cell, true)),
         tableHeader: true,
       }),
     )
@@ -43,17 +54,7 @@ export function buildTable(token: Tokens.Generic): Table {
   for (const row of (token["rows"] as ParsedTableCell[][] | undefined) ?? []) {
     rows.push(
       new TableRow({
-        children: row.map(
-          (cell) =>
-            new TableCell({
-              children: [
-                new Paragraph({
-                  children: inlineTokensToRuns(cell.tokens),
-                  alignment: cellAlignType(cell.align),
-                }),
-              ],
-            }),
-        ),
+        children: row.map((cell) => tableCell(cell)),
       }),
     )
   }
@@ -70,7 +71,11 @@ export function buildTable(token: Tokens.Generic): Table {
     const name = (el as { rootKey?: string }).rootKey
     return name !== "w:tblW" && name !== "w:tblBorders"
   })
-  const tblW = (ImportedXmlComponent.fromXmlString('<w:tblW w:w="5000" w:type="pct"/>') as unknown as { root: unknown[] }).root[0]
+  const tblW = (
+    ImportedXmlComponent.fromXmlString('<w:tblW w:w="5000" w:type="pct"/>') as unknown as {
+      root: unknown[]
+    }
+  ).root[0]
   tblPr.root.push(tblW)
   return table
 }
