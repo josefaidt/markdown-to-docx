@@ -1,5 +1,12 @@
 import type { INumberingOptions, IPropertiesOptions } from "docx"
-import { AlignmentType, BorderStyle, ImportedXmlComponent, LevelFormat, ShadingType, convertInchesToTwip } from "docx"
+import {
+  AlignmentType,
+  BorderStyle,
+  ImportedXmlComponent,
+  LevelFormat,
+  ShadingType,
+  convertInchesToTwip,
+} from "docx"
 import { listIndent } from "./list"
 
 interface FontSizes {
@@ -18,10 +25,10 @@ function fontSizes(basePt: number): FontSizes {
   const hp = (pt: number) => pt * 2
   return {
     normal: hp(basePt),
-    heading1: hp(basePt + 23),
-    heading2: hp(basePt + 10),
-    heading3: hp(basePt + 6),
-    heading456: hp(basePt + 3),
+    heading1: hp(basePt + 16),
+    heading2: hp(basePt + 8),
+    heading3: hp(basePt + 4),
+    heading456: hp(basePt + 2),
     codeBlock: hp(basePt),
     footerText: hp(basePt - 3),
     codeBlockSpacing: hp(6),
@@ -54,7 +61,7 @@ export function buildStyleOptions(
           basedOn: "Normal",
           next: "Normal",
           run: { size: sizes.heading1, bold: true },
-          paragraph: { spacing: { before: 0, after: 240 } },
+          paragraph: { spacing: { before: 320, after: 160 } },
         },
         {
           id: "Heading2",
@@ -62,7 +69,7 @@ export function buildStyleOptions(
           basedOn: "Normal",
           next: "Normal",
           run: { size: sizes.heading2, bold: true },
-          paragraph: { spacing: { before: 360, after: 160 } },
+          paragraph: { spacing: { before: 280, after: 160 } },
         },
         {
           id: "Heading3",
@@ -70,7 +77,7 @@ export function buildStyleOptions(
           basedOn: "Normal",
           next: "Normal",
           run: { size: sizes.heading3, bold: true },
-          paragraph: { spacing: { before: 300, after: 120 } },
+          paragraph: { spacing: { before: 240, after: 160 } },
         },
         {
           id: "Heading4",
@@ -78,7 +85,7 @@ export function buildStyleOptions(
           basedOn: "Normal",
           next: "Normal",
           run: { size: sizes.heading456, bold: true },
-          paragraph: { spacing: { before: 240, after: 80 } },
+          paragraph: { spacing: { before: 200, after: 160 } },
         },
         {
           id: "Heading5",
@@ -86,7 +93,7 @@ export function buildStyleOptions(
           basedOn: "Normal",
           next: "Normal",
           run: { size: sizes.heading456, bold: true, italics: true },
-          paragraph: { spacing: { before: 240, after: 80 } },
+          paragraph: { spacing: { before: 200, after: 160 } },
         },
         {
           id: "Heading6",
@@ -94,7 +101,7 @@ export function buildStyleOptions(
           basedOn: "Normal",
           next: "Normal",
           run: { size: sizes.heading456, underline: {} },
-          paragraph: { spacing: { before: 240, after: 80 } },
+          paragraph: { spacing: { before: 200, after: 160 } },
         },
         {
           id: "ListItem",
@@ -171,8 +178,9 @@ export function buildStyleOptions(
       ],
       importedStyles: [
         // fromXmlString returns a wrapper root; extract the inner w:style element
-        (ImportedXmlComponent.fromXmlString(
-          `<w:style w:type="table" w:styleId="TableGridLight">
+        (
+          ImportedXmlComponent.fromXmlString(
+            `<w:style w:type="table" w:styleId="TableGridLight">
             <w:name w:val="Grid Table Light"/>
             <w:basedOn w:val="TableNormal"/>
             <w:uiPriority w:val="40"/>
@@ -193,7 +201,8 @@ export function buildStyleOptions(
               </w:tblCellMar>
             </w:tblPr>
           </w:style>`,
-        ) as unknown as { root: ImportedXmlComponent[] }).root[0],
+          ) as unknown as { root: ImportedXmlComponent[] }
+        ).root[0],
       ],
     },
   }
@@ -210,12 +219,48 @@ export function buildNumbering(orderedRefs: string[] = []): INumberingOptions {
   ]
 
   const orderedLevels = [
-    { level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[0] } } },
-    { level: 1, format: LevelFormat.LOWER_LETTER, text: "%2.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[1] } } },
-    { level: 2, format: LevelFormat.LOWER_ROMAN, text: "%3.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[2] } } },
-    { level: 3, format: LevelFormat.DECIMAL, text: "%4.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[3] } } },
-    { level: 4, format: LevelFormat.LOWER_LETTER, text: "%5.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[4] } } },
-    { level: 5, format: LevelFormat.LOWER_ROMAN, text: "%6.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: ll[5] } } },
+    {
+      level: 0,
+      format: LevelFormat.DECIMAL,
+      text: "%1.",
+      alignment: AlignmentType.LEFT,
+      style: { paragraph: { indent: ll[0] } },
+    },
+    {
+      level: 1,
+      format: LevelFormat.LOWER_LETTER,
+      text: "%2.",
+      alignment: AlignmentType.LEFT,
+      style: { paragraph: { indent: ll[1] } },
+    },
+    {
+      level: 2,
+      format: LevelFormat.LOWER_ROMAN,
+      text: "%3.",
+      alignment: AlignmentType.LEFT,
+      style: { paragraph: { indent: ll[2] } },
+    },
+    {
+      level: 3,
+      format: LevelFormat.DECIMAL,
+      text: "%4.",
+      alignment: AlignmentType.LEFT,
+      style: { paragraph: { indent: ll[3] } },
+    },
+    {
+      level: 4,
+      format: LevelFormat.LOWER_LETTER,
+      text: "%5.",
+      alignment: AlignmentType.LEFT,
+      style: { paragraph: { indent: ll[4] } },
+    },
+    {
+      level: 5,
+      format: LevelFormat.LOWER_ROMAN,
+      text: "%6.",
+      alignment: AlignmentType.LEFT,
+      style: { paragraph: { indent: ll[5] } },
+    },
   ]
 
   return {
