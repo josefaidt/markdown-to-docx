@@ -1,5 +1,7 @@
 #!/bin/sh
 set -e
 
+[ -n "$CI" ] && exit 0
+
 bun run fmt:check
 bun run lint
