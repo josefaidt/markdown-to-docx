@@ -8,11 +8,16 @@ interface InlineCtx {
   italics?: boolean
 }
 
+function applyTypography(text: string): string {
+  return text.replace(/--/g, "\u2014")
+}
+
 export function inlineTokensToRuns(tokens: Tokens.Generic[], ctx: InlineCtx = {}): InlineChild[] {
   const runs: InlineChild[] = []
   for (const token of tokens) {
     // Use bracket notation because Tokens.Generic has an index signature
-    const text = token["text"] as string | undefined
+    const rawText = token["text"] as string | undefined
+    const text = rawText !== undefined ? applyTypography(rawText) : undefined
     const href = token["href"] as string | undefined
     const children = token["tokens"] as Tokens.Generic[] | undefined
     switch (token.type) {
@@ -34,7 +39,9 @@ export function inlineTokensToRuns(tokens: Tokens.Generic[], ctx: InlineCtx = {}
         break
       case "link": {
         const linkText =
-          children?.map((t) => (t["text"] as string | undefined) ?? "").join("") ?? text ?? ""
+          children?.map((t) => applyTypography((t["text"] as string | undefined) ?? "")).join("") ??
+          text ??
+          ""
         const linkHref = href ?? ""
         if (linkHref.startsWith("#")) {
           runs.push(
