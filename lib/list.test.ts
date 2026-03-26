@@ -5,7 +5,7 @@ import { listIndent } from "./list"
 // Constants mirrored from list.ts
 const BULLET_INDENT = convertInchesToTwip(0.2) // 288
 const TEXT_INDENT = convertInchesToTwip(0.45) // 648
-const LEVEL_STEP = convertInchesToTwip(0.25) // 360
+const LEVEL_STEP = convertInchesToTwip(0.35) // 504
 
 describe("listIndent", () => {
   test("level 0: left = TEXT_INDENT, hanging = TEXT_INDENT - BULLET_INDENT", () => {

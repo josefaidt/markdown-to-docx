@@ -4,7 +4,7 @@ import { inlineTokensToRuns } from "./inline"
 
 const LIST_BULLET_INDENT = convertInchesToTwip(0.2)
 const LIST_TEXT_INDENT = convertInchesToTwip(0.45)
-const LIST_LEVEL_INDENT = convertInchesToTwip(0.25)
+const LIST_LEVEL_INDENT = convertInchesToTwip(0.35)
 
 export function listIndent(level: number) {
   const bulletAt = LIST_BULLET_INDENT + level * LIST_LEVEL_INDENT
