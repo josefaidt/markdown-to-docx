@@ -25,8 +25,8 @@ function fontSizes(basePt: number): FontSizes {
   const hp = (pt: number) => pt * 2
   return {
     normal: hp(basePt),
-    heading1: hp(basePt + 16),
-    heading2: hp(basePt + 8),
+    heading1: hp(basePt + 14),
+    heading2: hp(basePt + 7),
     heading3: hp(basePt + 4),
     heading456: hp(basePt + 2),
     codeBlock: hp(basePt),
