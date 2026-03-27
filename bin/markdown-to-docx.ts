@@ -104,7 +104,14 @@ function parseArgs(args: string[]): {
   const flags = filteredArgs.filter((a) => a.startsWith("-"))
   const positional = filteredArgs.filter((a) => !a.startsWith("-"))
 
-  const knownFlags = new Set(["--line-numbers", "--page-numbers", "--help", "--version", "-h", "-v"])
+  const knownFlags = new Set([
+    "--line-numbers",
+    "--page-numbers",
+    "--help",
+    "--version",
+    "-h",
+    "-v",
+  ])
   const unknownFlags = flags.filter((f) => !knownFlags.has(f))
   if (unknownFlags.length > 0) {
     process.stderr.write(`Unknown flag(s): ${unknownFlags.join(", ")}\n${USAGE}\n`)
