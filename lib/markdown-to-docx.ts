@@ -128,7 +128,6 @@ async function tokensToDocx(
             orderedRef,
           ),
         )
-        elements.push(new Paragraph({ text: "", style: "ListSpacing", suppressLineNumbers: true }))
         break
       }
 
@@ -171,9 +170,6 @@ async function tokensToDocx(
             ],
           }),
         )
-        elements.push(
-          new Paragraph({ text: "", style: "CodeBlockSpacing", suppressLineNumbers: true }),
-        )
         break
       }
 
@@ -183,15 +179,11 @@ async function tokensToDocx(
             elements.push(new Paragraph({ text: inner["text"] as string, style: "Blockquote" }))
           }
         }
-        elements.push(new Paragraph({ text: "", style: "ListSpacing", suppressLineNumbers: true }))
         break
       }
 
       case "table": {
         elements.push(buildTable(token))
-        elements.push(
-          new Paragraph({ text: "", style: "CodeBlockSpacing", suppressLineNumbers: true }),
-        )
         break
       }
 

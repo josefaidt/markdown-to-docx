@@ -17,8 +17,6 @@ interface FontSizes {
   heading456: number
   codeBlock: number
   footerText: number
-  codeBlockSpacing: number
-  listSpacing: number
 }
 
 function fontSizes(basePt: number): FontSizes {
@@ -31,8 +29,6 @@ function fontSizes(basePt: number): FontSizes {
     heading456: hp(basePt + 2),
     codeBlock: hp(basePt),
     footerText: hp(basePt - 3),
-    codeBlockSpacing: hp(6),
-    listSpacing: hp(4),
   }
 }
 
@@ -108,7 +104,7 @@ export function buildStyleOptions(
           name: "List Item",
           basedOn: "Normal",
           next: "ListItem",
-          paragraph: { spacing: { before: 0, after: 80, line: 276 } },
+          paragraph: { spacing: { before: 0, after: 160, line: 276 }, contextualSpacing: true },
         },
         {
           id: "Blockquote",
@@ -130,22 +126,6 @@ export function buildStyleOptions(
           basedOn: "Normal",
           next: "Normal",
           run: { font: "Consolas", size: sizes.codeBlock, color: "555555" },
-          paragraph: { spacing: { before: 0, after: 0, line: 240 } },
-        },
-        {
-          id: "CodeBlockSpacing",
-          name: "Code Block Spacing",
-          basedOn: "Normal",
-          next: "Normal",
-          run: { size: sizes.codeBlockSpacing },
-          paragraph: { spacing: { before: 0, after: 0, line: 240 } },
-        },
-        {
-          id: "ListSpacing",
-          name: "List Spacing",
-          basedOn: "Normal",
-          next: "Normal",
-          run: { size: sizes.listSpacing },
           paragraph: { spacing: { before: 0, after: 0, line: 240 } },
         },
         {
