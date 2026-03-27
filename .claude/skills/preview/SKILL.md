@@ -8,5 +8,5 @@ description: Generate a preview .docx from a representative test fixture and ope
 Generate a `.docx` from the test fixture at `scripts/preview.md` and open it so the user can visually inspect the output.
 
 ```bash
-bun run bin/markdown-to-docx.ts .claude/skills/preview/preview.md /tmp/preview.docx && open /tmp/preview.docx
+bun run bin/markdown-to-docx.ts .claude/skills/preview/assets/preview.md /tmp/preview.docx && open /tmp/preview.docx
 ```
