@@ -20,8 +20,8 @@ Options:
   --page-numbers     Add a right-aligned page number to the footer
   --font-size <n>    Base font size in pt; all styles scale from this (default: 12)
   --line-numbers     Enable Word's built-in document line numbering
-  --version          Print the version number
-  --help             Show this help message
+  -v, --version      Print the version number
+  -h, --help         Show this help message
 `.trim()
 
 function parseArgs(args: string[]): {
@@ -30,12 +30,12 @@ function parseArgs(args: string[]): {
   templatePath: string | null
   options: ConvertOptions
 } | null {
-  if (args.includes("--version")) {
+  if (args.includes("--version") || args.includes("-v")) {
     process.stdout.write(pkg.version + "\n")
     return null
   }
 
-  if (args.length === 0 || args.includes("--help")) {
+  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     process.stdout.write(USAGE + "\n")
     return null
   }
@@ -146,9 +146,13 @@ async function loadTemplateStyles(templatePath: string): Promise<string> {
   return stylesFile.async("string")
 }
 
-const parsed = parseArgs(Bun.argv.slice(2))
+const rawArgs = Bun.argv.slice(2)
+const parsed = parseArgs(rawArgs)
 if (parsed === null) {
-  process.exit(Bun.argv.slice(2).length === 0 || !Bun.argv.includes("--help") ? 1 : 0)
+  const isHelpOrVersion = rawArgs.some(
+    (a) => a === "--help" || a === "-h" || a === "--version" || a === "-v",
+  )
+  process.exit(isHelpOrVersion ? 0 : 1)
 }
 
 const { inputPath, outputPath, templatePath, options } = parsed
