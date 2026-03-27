@@ -81,7 +81,7 @@ describe("inlineTokensToRuns", () => {
   test("plain text -- double-dash is converted to em dash", () => {
     const runs = parseInline("foo -- bar")
     expect(runs).toHaveLength(1)
-    const wt = ((runs[0] as TextRun) as any).root.find((n: any) => n.rootKey === "w:t")
+    const wt = (runs[0] as TextRun as any).root.find((n: any) => n.rootKey === "w:t")
     expect(wt.root[1]).toBe("foo \u2014 bar")
   })
 

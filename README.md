@@ -7,6 +7,7 @@ Convert Markdown files to Word (`.docx`) documents. Format heavily inspired by [
 ## Usage
 
 <!-- BEGIN USAGE -->
+
 ```console
 Usage: markdown-to-docx <input.md> [output.docx] [options]
 
@@ -24,6 +25,7 @@ Options:
   --version          Print the version number
   --help             Show this help message
 ```
+
 <!-- END USAGE -->
 
 ## Install
