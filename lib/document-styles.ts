@@ -113,7 +113,7 @@ export function buildStyleOptions(
           next: "Normal",
           run: { italics: true, color: "777777" },
           paragraph: {
-            spacing: { before: 240, after: 80, line: 276, lineRule: "auto" as const },
+            spacing: { before: 240, after: 0, line: 276, lineRule: "auto" as const },
             indent: { left: convertInchesToTwip(0.15) },
             border: {
               left: { style: BorderStyle.SINGLE, size: 24, color: "A6A6A6", space: 6 },
