@@ -54,11 +54,11 @@ Paragraph after code block.
 
 ## Table
 
-| Name    | Role      | Status |
-| ------- | --------- | ------ |
-| Alice   | Engineer  | Active |
-| Bob     | Designer  | Active |
-| Charlie | Manager   | Away   |
+| Name    | Role     | Status |
+| ------- | -------- | ------ |
+| Alice   | Engineer | Active |
+| Bob     | Designer | Active |
+| Charlie | Manager  | Away   |
 
 Paragraph after table.
 
