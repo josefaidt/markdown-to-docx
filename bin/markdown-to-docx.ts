@@ -17,10 +17,12 @@ Options:
   --font-size <n>    Base font size in pt; all styles scale from this (default: 12)
   --footer <text>    Text to display in the bottom-left footer
   --header <text>    Text to display left-aligned in the header (skipped on the first page)
-  -h, --help         Show this help message
   --line-numbers     Enable Word's built-in document line numbering
   --page-numbers     Add a right-aligned page number to the footer
   --template <path>  Path to a .dotx template file to load styles from
+
+Global Options:
+  -h, --help         Show this help message
   -v, --version      Print the version number
 `.trim()
 
