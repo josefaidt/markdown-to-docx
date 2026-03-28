@@ -17,11 +17,11 @@ Options:
   --font-size <n>    Base font size in pt; all styles scale from this (default: 12)
   --footer <text>    Text to display in the bottom-left footer
   --header <text>    Text to display left-aligned in the header (skipped on the first page)
-  --help             Show this help message
+  -h, --help         Show this help message
   --line-numbers     Enable Word's built-in document line numbering
   --page-numbers     Add a right-aligned page number to the footer
   --template <path>  Path to a .dotx template file to load styles from
-  --version          Print the version number
+  -v, --version      Print the version number
 `.trim()
 
 function parseArgs(args: string[]): {
@@ -30,12 +30,12 @@ function parseArgs(args: string[]): {
   templatePath: string | null
   options: ConvertOptions
 } | null {
-  if (args.includes("--version")) {
+  if (args.includes("--version") || args.includes("-v")) {
     process.stdout.write(pkg.version + "\n")
     return null
   }
 
-  if (args.length === 0 || args.includes("--help")) {
+  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     process.stdout.write(USAGE + "\n")
     return null
   }
@@ -101,12 +101,18 @@ function parseArgs(args: string[]): {
     filteredArgs.splice(fontSizeIdx, 2)
   }
 
-  const flags = filteredArgs.filter((a) => a.startsWith("--"))
-  const positional = filteredArgs.filter((a) => !a.startsWith("--"))
+  const flags = filteredArgs.filter((a) => a.startsWith("-"))
+  const positional = filteredArgs.filter((a) => !a.startsWith("-"))
 
-  const unknownFlags = flags.filter(
-    (f) => f !== "--line-numbers" && f !== "--page-numbers" && f !== "--help" && f !== "--version",
-  )
+  const knownFlags = new Set([
+    "--line-numbers",
+    "--page-numbers",
+    "--help",
+    "--version",
+    "-h",
+    "-v",
+  ])
+  const unknownFlags = flags.filter((f) => !knownFlags.has(f))
   if (unknownFlags.length > 0) {
     process.stderr.write(`Unknown flag(s): ${unknownFlags.join(", ")}\n${USAGE}\n`)
     return null
@@ -146,9 +152,15 @@ async function loadTemplateStyles(templatePath: string): Promise<string> {
   return stylesFile.async("string")
 }
 
-const parsed = parseArgs(Bun.argv.slice(2))
+const _cliArgs = Bun.argv.slice(2)
+const parsed = parseArgs(_cliArgs)
 if (parsed === null) {
-  process.exit(Bun.argv.slice(2).length === 0 || !Bun.argv.includes("--help") ? 1 : 0)
+  const isExplicitRequest =
+    _cliArgs.includes("--version") ||
+    _cliArgs.includes("-v") ||
+    _cliArgs.includes("--help") ||
+    _cliArgs.includes("-h")
+  process.exit(isExplicitRequest ? 0 : 1)
 }
 
 const { inputPath, outputPath, templatePath, options } = parsed
