@@ -319,6 +319,13 @@ describe("lists", () => {
     expect(body).toContain('w:val="ListItem"')
   })
 
+  test("ListItem style has contextualSpacing enabled", async () => {
+    const { zip } = await buildDocx("- item")
+    const stylesXml = await zip.file("word/styles.xml")!.async("string")
+    const listItemChunk = stylesXml.split(/<w:style\s/).find((c) => c.includes('"ListItem"')) ?? ""
+    expect(listItemChunk).toContain("<w:contextualSpacing/>")
+  })
+
   test("nested list items increment the ilvl", async () => {
     const body = await bodyXml("- parent\n  - child")
     expect(body).toContain('w:val="0"')
@@ -345,9 +352,9 @@ describe("code blocks", () => {
     expect(matches).toHaveLength(3)
   })
 
-  test("code block is followed by a CodeBlockSpacing paragraph", async () => {
+  test("code block is not followed by a spacer paragraph", async () => {
     const body = await bodyXml("```\nhello\n```")
-    expect(body).toContain('w:val="CodeBlockSpacing"')
+    expect(body).not.toContain('w:val="CodeBlockSpacing"')
   })
 })
 
@@ -521,18 +528,14 @@ describe("font size scaling", () => {
     expect(sizes.get("FooterText")).toBe(14)
   })
 
-  test("CodeBlockSpacing stays fixed at 12 regardless of fontSize", async () => {
-    const at10 = await styleSizes({ fontSize: 10 })
-    const at16 = await styleSizes({ fontSize: 16 })
-    expect(at10.get("CodeBlockSpacing")).toBe(12)
-    expect(at16.get("CodeBlockSpacing")).toBe(12)
+  test("CodeBlockSpacing style is not present", async () => {
+    const sizes = await styleSizes()
+    expect(sizes.has("CodeBlockSpacing")).toBe(false)
   })
 
-  test("ListSpacing stays fixed at 8 regardless of fontSize", async () => {
-    const at10 = await styleSizes({ fontSize: 10 })
-    const at16 = await styleSizes({ fontSize: 16 })
-    expect(at10.get("ListSpacing")).toBe(8)
-    expect(at16.get("ListSpacing")).toBe(8)
+  test("ListSpacing style is not present", async () => {
+    const sizes = await styleSizes()
+    expect(sizes.has("ListSpacing")).toBe(false)
   })
 })
 
