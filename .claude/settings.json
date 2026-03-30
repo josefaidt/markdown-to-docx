@@ -24,7 +24,12 @@
       "Bash(gh release list:*)",
 
       "Bash(gh workflow view:*)",
-      "Bash(gh workflow list:*)"
+      "Bash(gh workflow list:*)",
+
+      "Bash(bun run bin/markdown-to-docx.ts*)",
+      "Write(bin/**/*)",
+      "Write(lib/**/*)",
+      "Write(scripts/**/*)"
     ]
   }
 }
