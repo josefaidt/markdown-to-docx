@@ -104,7 +104,7 @@ export function buildStyleOptions(
           name: "List Item",
           basedOn: "Normal",
           next: "ListItem",
-          paragraph: { spacing: { before: 0, after: 160, line: 276 }, contextualSpacing: true },
+          paragraph: { spacing: { before: 60, after: 160, line: 276 }, contextualSpacing: true },
         },
         {
           id: "Blockquote",
@@ -113,7 +113,7 @@ export function buildStyleOptions(
           next: "Normal",
           run: { italics: true, color: "777777" },
           paragraph: {
-            spacing: { before: 240, after: 0, line: 276, lineRule: "auto" as const },
+            spacing: { before: 0, after: 0, line: 276, lineRule: "auto" as const },
             indent: { left: convertInchesToTwip(0.15) },
             border: {
               left: { style: BorderStyle.SINGLE, size: 24, color: "A6A6A6", space: 6 },

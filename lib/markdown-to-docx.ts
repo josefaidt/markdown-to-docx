@@ -170,6 +170,7 @@ async function tokensToDocx(
             ],
           }),
         )
+        elements.push(new Paragraph({ children: [new TextRun({ size: 12 })], spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const } }))
         break
       }
 
@@ -179,11 +180,13 @@ async function tokensToDocx(
             elements.push(new Paragraph({ text: inner["text"] as string, style: "Blockquote" }))
           }
         }
+        elements.push(new Paragraph({ children: [new TextRun({ size: 12 })], spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const } }))
         break
       }
 
       case "table": {
         elements.push(buildTable(token))
+        elements.push(new Paragraph({ children: [new TextRun({ size: 12 })], spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const } }))
         break
       }
 
