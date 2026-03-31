@@ -59,16 +59,15 @@ async function tokensToDocx(
       case "heading": {
         const text = token["text"] as string | undefined
         const inlineTokens = (token["tokens"] as Tokens.Generic[] | undefined) ?? []
-        if (firstAppendix && text?.includes("Appendix")) {
-          elements.push(new Paragraph({ pageBreakBefore: true }))
-          firstAppendix = false
-        }
+        const isFirstAppendix = firstAppendix && text?.includes("Appendix")
+        if (isFirstAppendix) firstAppendix = false
         const slug = text ? headingSlug(text) : undefined
         const runs = inlineTokensToRuns(inlineTokens)
         elements.push(
           new Paragraph({
             children: slug ? [new Bookmark({ id: slug, children: runs })] : runs,
             style: HEADING_STYLES[(token["depth"] as number | undefined) ?? 1] ?? "Heading1",
+            pageBreakBefore: isFirstAppendix,
           }),
         )
         break
