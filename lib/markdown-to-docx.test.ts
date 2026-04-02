@@ -197,6 +197,13 @@ describe("headings", () => {
     const body = await bodyXml("## Two  Words")
     expect(body).toContain('w:name="two-words"')
   })
+
+  test("multiple headings get unique bookmark ids", async () => {
+    const body = await bodyXml("# One\n\n## Two\n\n### Three")
+    const ids = [...body.matchAll(/w:bookmarkStart[^>]+w:id="(\d+)"/g)].map((m) => m[1])
+    expect(ids.length).toBe(3)
+    expect(new Set(ids).size).toBe(3)
+  })
 })
 
 describe("inline formatting", () => {
@@ -222,6 +229,15 @@ describe("inline formatting", () => {
     const body = await bodyXml("Use `foo()` here")
     expect(body).toContain('w:val="InlineCode"')
     expect(body).toContain("foo()")
+  })
+
+  test("`code#with-hash` renders as a single InlineCode run — not split at #", async () => {
+    const body = await bodyXml("Use `package.json#name` here")
+    // The full text must appear as a single w:t value, not split into two runs
+    expect(body).toContain("package.json#name")
+    // Verify there is exactly one InlineCode run (not two)
+    const inlineRuns = body.match(/<w:rStyle w:val="InlineCode"\/>/g) ?? []
+    expect(inlineRuns).toHaveLength(1)
   })
 
   test("[link](url) renders as hyperlink with Hyperlink style", async () => {

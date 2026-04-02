@@ -1,7 +1,8 @@
 import type { Tokens } from "marked"
 import {
   AlignmentType,
-  Bookmark,
+  BookmarkEnd,
+  BookmarkStart,
   BorderStyle,
   Document,
   Footer,
@@ -53,6 +54,7 @@ async function tokensToDocx(
   const elements: Array<Paragraph | Table> = []
   const orderedRefs: string[] = []
   let firstAppendix = true
+  let bookmarkId = 0
 
   for (const token of tokens) {
     switch (token.type) {
@@ -63,9 +65,12 @@ async function tokensToDocx(
         if (isFirstAppendix) firstAppendix = false
         const slug = text ? headingSlug(text) : undefined
         const runs = inlineTokensToRuns(inlineTokens)
+        const id = ++bookmarkId
         elements.push(
           new Paragraph({
-            children: slug ? [new Bookmark({ id: slug, children: runs })] : runs,
+            children: slug
+              ? [new BookmarkStart(slug, id), ...runs, new BookmarkEnd(id)]
+              : runs,
             style: HEADING_STYLES[(token["depth"] as number | undefined) ?? 1] ?? "Heading1",
             pageBreakBefore: isFirstAppendix,
           }),
