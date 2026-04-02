@@ -271,7 +271,7 @@ export interface ConvertOptions {
   lineNumbers?: boolean
   /** Raw XML string extracted from word/styles.xml in a .dotx template */
   externalStylesXml?: string
-  /** Base font size in pt; all readable styles scale from this (default: 12) */
+  /** Base font size in pt; all readable styles scale from this (default: 11) */
   fontSize?: number
 }
 
@@ -330,7 +330,7 @@ export async function convertMarkdownToDocx(
   })
 
   return new Document({
-    ...buildStyleOptions(options.fontSize ?? 12, options.externalStylesXml),
+    ...buildStyleOptions(options.fontSize ?? 11, options.externalStylesXml),
     numbering: buildNumbering(orderedRefs),
     sections: [
       {
