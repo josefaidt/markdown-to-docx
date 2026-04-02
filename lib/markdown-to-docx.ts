@@ -68,6 +68,7 @@ async function tokensToDocx(
             children: slug ? [new Bookmark({ id: slug, children: runs })] : runs,
             style: HEADING_STYLES[(token["depth"] as number | undefined) ?? 1] ?? "Heading1",
             pageBreakBefore: isFirstAppendix,
+            spacing: isFirstAppendix ? { before: 0 } : undefined,
           }),
         )
         break

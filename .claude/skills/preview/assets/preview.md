@@ -100,3 +100,19 @@ Back to a paragraph. Then an ordered list.
 2. Two
 
 Then another paragraph to close.
+
+## Appendix A: Reference Tables
+
+This is the first appendix. The heading above should appear at the top of a new page with no blank line before it.
+
+| Term      | Definition                       |
+| --------- | -------------------------------- |
+| Markdown  | Lightweight markup language      |
+| docx      | Microsoft Word document format   |
+| Paragraph | Block of text in a Word document |
+
+## Appendix B: Additional Notes
+
+This is the second appendix. It should follow directly without a forced page break.
+
+Some closing notes here.
