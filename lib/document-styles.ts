@@ -28,7 +28,7 @@ function fontSizes(basePt: number): FontSizes {
     heading3: hp(basePt + 4),
     heading456: hp(basePt + 2),
     codeBlock: hp(basePt),
-    footerText: hp(basePt - 3),
+    footerText: hp(10),
   }
 }
 

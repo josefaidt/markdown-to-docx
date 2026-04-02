@@ -485,14 +485,14 @@ describe("font size scaling", () => {
     return map
   }
 
-  test("default (no fontSize) → Normal = 24 half-points", async () => {
+  test("default (no fontSize) → Normal = 22 half-points", async () => {
     const sizes = await styleSizes()
-    expect(sizes.get("Normal")).toBe(24)
+    expect(sizes.get("Normal")).toBe(22)
   })
 
-  test("fontSize: 12 explicit === no fontSize implicit", async () => {
+  test("fontSize: 11 explicit === no fontSize implicit", async () => {
     const implicit = await styleSizes()
-    const explicit = await styleSizes({ fontSize: 12 })
+    const explicit = await styleSizes({ fontSize: 11 })
     for (const [id, size] of implicit) {
       expect(explicit.get(id)).toBe(size)
     }
@@ -523,9 +523,11 @@ describe("font size scaling", () => {
     expect(sizes.get("CodeBlock")).toBe(20)
   })
 
-  test("fontSize: 10 → FooterText = 14 half-points (10-3=7pt)", async () => {
-    const sizes = await styleSizes({ fontSize: 10 })
-    expect(sizes.get("FooterText")).toBe(14)
+  test("FooterText is always 20 half-points (fixed 10pt) regardless of fontSize", async () => {
+    const sizesDefault = await styleSizes()
+    expect(sizesDefault.get("FooterText")).toBe(20)
+    const sizesCustom = await styleSizes({ fontSize: 10 })
+    expect(sizesCustom.get("FooterText")).toBe(20)
   })
 
   test("CodeBlockSpacing style is not present", async () => {
