@@ -26,7 +26,6 @@
       "Bash(gh workflow view *)",
       "Bash(gh workflow list *)",
 
-      "Bash(git status && git diff)",
       "Bash(git push -u origin worktree-*)",
 
       "Bash(bun run bin/markdown-to-docx.ts *)",
