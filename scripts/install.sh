@@ -43,15 +43,14 @@ if [ -z "$LATEST" ]; then
   exit 1
 fi
 
+IS_UPDATE=0
 if [ -x "$INSTALL_PATH" ]; then
   CURRENT=$("$INSTALL_PATH" --version 2>/dev/null || echo "")
   if [ "$CURRENT" = "$LATEST" ]; then
-    echo "Already up to date ($LATEST)"
+    echo "${BIN_NAME} is already up to date (${LATEST})"
     exit 0
   fi
-  echo "Updating $CURRENT → $LATEST..."
-else
-  echo "Installing $LATEST..."
+  IS_UPDATE=1
 fi
 
 URL="https://github.com/${REPO}/releases/download/${LATEST}/${ARTIFACT}"
@@ -66,14 +65,30 @@ if [ -n "$LINK_PATH" ]; then
   mkdir -p "$LINK_DIR"
   ln -sf "$INSTALL_PATH" "$LINK_PATH"
 fi
-echo "Done."
+
+DISPLAY_PATH="${LINK_PATH:-$INSTALL_PATH}"
+# Shorten $HOME to ~
+DISPLAY_PATH_SHORT=$(echo "$DISPLAY_PATH" | sed "s|^$HOME|~|")
+
+echo ""
+if [ "$IS_UPDATE" = "1" ]; then
+  echo "✔ ${BIN_NAME} successfully updated!"
+else
+  echo "✔ ${BIN_NAME} successfully installed!"
+fi
+echo ""
+echo "  Version:  ${LATEST}"
+echo "  Location: ${DISPLAY_PATH_SHORT}"
+echo ""
+echo "  Next: Run ${BIN_NAME} --help to get started"
+echo ""
 
 case ":$PATH:" in
   *":${XDG_BIN_HOME}:"*) ;;
   *)
-    echo ""
     echo "Note: ${XDG_BIN_HOME} is not in your PATH."
     echo "Add the following to your shell profile:"
     echo "  export PATH=\"\$PATH:${XDG_BIN_HOME}\""
+    echo ""
     ;;
 esac
