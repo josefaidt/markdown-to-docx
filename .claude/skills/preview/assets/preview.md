@@ -44,6 +44,8 @@ Paragraph after ordered list.
 
 > This is a blockquote with some text to check spacing above and below.
 
+> **Note** this blockquote has **bold**, _italic_, and `inline code` decorations.
+
 Paragraph after blockquote.
 
 ## Code Block

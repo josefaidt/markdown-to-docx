@@ -180,8 +180,11 @@ async function tokensToDocx(
 
       case "blockquote": {
         for (const inner of (token["tokens"] as Tokens.Generic[] | undefined) ?? []) {
-          if (inner.type === "paragraph" && inner["text"]) {
-            elements.push(new Paragraph({ text: inner["text"] as string, style: "Blockquote" }))
+          if (inner.type === "paragraph") {
+            const inlineTokens = (inner["tokens"] as Tokens.Generic[] | undefined) ?? []
+            elements.push(
+              new Paragraph({ children: inlineTokensToRuns(inlineTokens), style: "Blockquote" }),
+            )
           }
         }
         elements.push(
