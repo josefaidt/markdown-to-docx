@@ -381,7 +381,10 @@ describe("code blocks", () => {
   test("fenced code uses CodeBlock style", async () => {
     const body = await bodyXml("```js\nconst x = 1\n```")
     expect(body).toContain('w:val="CodeBlock"')
-    expect(body).toContain("const x = 1")
+    // with highlighting, tokens are split — verify each token appears
+    expect(body).toContain("const")
+    expect(body).toContain(">x<")
+    expect(body).toContain(">1<")
   })
 
   test("code block is wrapped in a borderless table with grey shading", async () => {
@@ -399,6 +402,21 @@ describe("code blocks", () => {
   test("code block is not followed by a spacer paragraph", async () => {
     const body = await bodyXml("```\nhello\n```")
     expect(body).not.toContain('w:val="CodeBlockSpacing"')
+  })
+
+  test("highlighted code block emits colored runs for a known language", async () => {
+    const body = await bodyXml("```typescript\nconst x = 1\n```")
+    // 'const' is a keyword — shiki github-light renders it in red D73A49
+    expect(body).toContain('w:val="D73A49"')
+    // numeric literal '1' is rendered in blue 005CC5
+    expect(body).toContain('w:val="005CC5"')
+  })
+
+  test("code block without a language falls back to plain text (no color runs)", async () => {
+    const body = await bodyXml("```\nhello world\n```")
+    expect(body).toContain("hello world")
+    // plain fallback uses CodeBlock style color via stylesheet, no per-run color
+    expect(body).not.toContain("<w:color")
   })
 })
 
