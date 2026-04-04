@@ -171,7 +171,7 @@ async function tokensToDocx(
                 children: [
                   new TableCell({
                     children: codeLines,
-                    shading: { type: ShadingType.CLEAR, color: "F2F2F2", fill: "F2F2F2" },
+                    shading: { type: ShadingType.CLEAR, color: "F6F8FA", fill: "F6F8FA" },
                     margins: {
                       top: convertInchesToTwip(0.1),
                       bottom: convertInchesToTwip(0.1),

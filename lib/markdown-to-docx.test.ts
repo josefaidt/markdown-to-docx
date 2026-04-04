@@ -390,7 +390,7 @@ describe("code blocks", () => {
   test("code block is wrapped in a borderless table with grey shading", async () => {
     const body = await bodyXml("```\nhello\n```")
     expect(body).toContain('w:val="none"')
-    expect(body).toContain('w:fill="F2F2F2"')
+    expect(body).toContain('w:fill="F6F8FA"')
   })
 
   test("multi-line code block produces one paragraph per line", async () => {
