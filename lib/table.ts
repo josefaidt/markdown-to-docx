@@ -1,12 +1,5 @@
 import type { Tokens } from "marked"
-import {
-  AlignmentType,
-  ImportedXmlComponent,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
-} from "docx"
+import { AlignmentType, ImportedXmlComponent, Paragraph, Table, TableCell, TableRow } from "docx"
 import { inlineTokensToRuns } from "./inline"
 
 interface ParsedTableCell {
