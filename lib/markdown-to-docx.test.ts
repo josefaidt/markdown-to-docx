@@ -418,6 +418,29 @@ describe("tables", () => {
   })
 })
 
+describe("list spacing", () => {
+  test("blank line between bullet list and ordered list inserts a spacer paragraph", async () => {
+    const md = "- alpha\n- beta\n\n1. first\n2. second"
+    const body = await bodyXml(md)
+    // Both list items must appear
+    expect(body).toContain("alpha")
+    expect(body).toContain("first")
+    // A spacer paragraph (size 12, exact line height 160) must separate them
+    expect(body).toMatch(/<w:sz w:val="12"\/>/)
+  })
+
+  test("no blank line between bullet list and ordered list produces no spacer", async () => {
+    // When there is no blank line, marked treats it as a single list; no spacer expected
+    const md = "- alpha\n- beta\n1. first\n2. second"
+    const body = await bodyXml(md)
+    expect(body).toContain("alpha")
+    expect(body).toContain("first")
+    // No tiny spacer run between adjacent items in the same list block
+    const spacerCount = (body.match(/<w:sz w:val="12"\/>/g) ?? []).length
+    expect(spacerCount).toBe(0)
+  })
+})
+
 describe("list inline formatting", () => {
   test("**bold** inside list item renders <w:b/>", async () => {
     const body = await bodyXml("- **bold item**")

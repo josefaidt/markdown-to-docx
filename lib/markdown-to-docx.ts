@@ -46,6 +46,7 @@ async function tokensToDocx(
   const orderedRefs: string[] = []
   let firstAppendix = true
   let bookmarkId = 0
+  let prevTokenType: string | undefined
 
   for (const token of tokens) {
     switch (token.type) {
@@ -242,8 +243,17 @@ async function tokensToDocx(
         break
       }
 
-      case "space":
+      case "space": {
+        if (prevTokenType === "list") {
+          elements.push(
+            new Paragraph({
+              children: [new TextRun({ size: 12 })],
+              spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const },
+            }),
+          )
+        }
         break
+      }
 
       default:
         if ((token["tokens"] as Tokens.Generic[] | undefined)?.length || token["text"]) {
@@ -254,6 +264,7 @@ async function tokensToDocx(
           )
         }
     }
+    prevTokenType = token.type
   }
 
   return { elements, orderedRefs }

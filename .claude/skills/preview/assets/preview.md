@@ -103,6 +103,28 @@ Back to a paragraph. Then an ordered list.
 
 Then another paragraph to close.
 
+## List Separation (Issue #22)
+
+A bullet list followed by a blank line and then an ordered list — there should be visible space between them.
+
+- Something
+- Something else
+- One more thing
+
+1. First ordered item
+2. Second ordered item
+3. Third ordered item
+
+An ordered list followed by a blank line and then a bullet list.
+
+1. First
+2. Second
+3. Third
+
+- Bullet A
+- Bullet B
+- Bullet C
+
 ## Anchor Links
 
 Jump to [Heading 2](#heading-2), [Unordered List](#unordered-list), or [Code Block](#code-block).
