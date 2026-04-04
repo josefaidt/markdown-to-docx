@@ -231,6 +231,14 @@ describe("inline formatting", () => {
     expect(body).toContain("foo()")
   })
 
+  test("InlineCode style has color 555555 to match code blocks", async () => {
+    const { zip } = await buildDocx("`foo`")
+    const stylesXml = await zip.file("word/styles.xml")!.async("string")
+    const inlineCodeChunk =
+      stylesXml.split(/<w:style\s/).find((c) => c.includes('"InlineCode"')) ?? ""
+    expect(inlineCodeChunk).toContain('w:val="555555"')
+  })
+
   test("`code#with-hash` renders as a single InlineCode run — not split at #", async () => {
     const body = await bodyXml("Use `package.json#name` here")
     // The full text must appear as a single w:t value, not split into two runs
@@ -373,13 +381,16 @@ describe("code blocks", () => {
   test("fenced code uses CodeBlock style", async () => {
     const body = await bodyXml("```js\nconst x = 1\n```")
     expect(body).toContain('w:val="CodeBlock"')
-    expect(body).toContain("const x = 1")
+    // with highlighting, tokens are split — verify each token appears
+    expect(body).toContain("const")
+    expect(body).toContain(">x<")
+    expect(body).toContain(">1<")
   })
 
   test("code block is wrapped in a borderless table with grey shading", async () => {
     const body = await bodyXml("```\nhello\n```")
     expect(body).toContain('w:val="none"')
-    expect(body).toContain('w:fill="F2F2F2"')
+    expect(body).toContain('w:fill="F6F8FA"')
   })
 
   test("multi-line code block produces one paragraph per line", async () => {
@@ -391,6 +402,21 @@ describe("code blocks", () => {
   test("code block is not followed by a spacer paragraph", async () => {
     const body = await bodyXml("```\nhello\n```")
     expect(body).not.toContain('w:val="CodeBlockSpacing"')
+  })
+
+  test("highlighted code block emits colored runs for a known language", async () => {
+    const body = await bodyXml("```typescript\nconst x = 1\n```")
+    // 'const' is a keyword — shiki github-light renders it in red D73A49
+    expect(body).toContain('w:val="D73A49"')
+    // numeric literal '1' is rendered in blue 005CC5
+    expect(body).toContain('w:val="005CC5"')
+  })
+
+  test("code block without a language falls back to plain text (no color runs)", async () => {
+    const body = await bodyXml("```\nhello world\n```")
+    expect(body).toContain("hello world")
+    // plain fallback uses CodeBlock style color via stylesheet, no per-run color
+    expect(body).not.toContain("<w:color")
   })
 })
 

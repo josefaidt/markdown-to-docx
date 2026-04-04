@@ -149,6 +149,7 @@ export function buildStyleOptions(
           name: "Inline Code",
           run: {
             font: "Consolas",
+            color: "555555",
             shading: { type: ShadingType.CLEAR, color: "F2F2F2", fill: "F2F2F2" },
           },
         },

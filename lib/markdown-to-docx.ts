@@ -24,6 +24,7 @@ import {
 import { marked } from "marked"
 import { buildNumbering, buildStyleOptions } from "./document-styles"
 import { parseFrontmatter } from "./frontmatter"
+import { highlightCode, isSupportedLang } from "./highlight"
 import { loadImage } from "./image"
 import { headingSlug, inlineTokensToRuns } from "./inline"
 import { listItemsToParagraphs } from "./list"
@@ -126,9 +127,26 @@ async function tokensToDocx(
       }
 
       case "code": {
-        const codeLines = ((token["text"] as string | undefined) ?? "")
-          .split("\n")
-          .map((line) => new Paragraph({ text: line, style: "CodeBlock" }))
+        const codeText = (token["text"] as string | undefined) ?? ""
+        const codeLang = token["lang"] as string | undefined
+        const codeLines = isSupportedLang(codeLang)
+          ? (await highlightCode(codeText, codeLang)).map(
+              (lineTokens) =>
+                new Paragraph({
+                  children: lineTokens.map(
+                    (t) =>
+                      new TextRun({
+                        text: t.text,
+                        font: "Consolas",
+                        color: t.color,
+                        bold: t.bold || undefined,
+                        italics: t.italic || undefined,
+                      }),
+                  ),
+                  style: "CodeBlock",
+                }),
+            )
+          : codeText.split("\n").map((line) => new Paragraph({ text: line, style: "CodeBlock" }))
         elements.push(
           new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
@@ -145,7 +163,7 @@ async function tokensToDocx(
                 children: [
                   new TableCell({
                     children: codeLines,
-                    shading: { type: ShadingType.CLEAR, color: "F2F2F2", fill: "F2F2F2" },
+                    shading: { type: ShadingType.CLEAR, color: "F6F8FA", fill: "F6F8FA" },
                     margins: {
                       top: convertInchesToTwip(0.1),
                       bottom: convertInchesToTwip(0.1),
