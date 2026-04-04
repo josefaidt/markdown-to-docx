@@ -68,9 +68,7 @@ async function tokensToDocx(
         const id = ++bookmarkId
         elements.push(
           new Paragraph({
-            children: slug
-              ? [new BookmarkStart(slug, id), ...runs, new BookmarkEnd(id)]
-              : runs,
+            children: slug ? [new BookmarkStart(slug, id), ...runs, new BookmarkEnd(id)] : runs,
             style: HEADING_STYLES[(token["depth"] as number | undefined) ?? 1] ?? "Heading1",
             pageBreakBefore: isFirstAppendix,
           }),
