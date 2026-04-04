@@ -110,3 +110,33 @@ Jump to [Heading 2](#heading-2), [Unordered List](#unordered-list), or [Code Blo
 A link with special-char heading: [Table section](#table).
 
 External link for comparison: [example.com](https://example.com).
+
+See also [Appendix A](#appendix-a-something), [Appendix B](#appendix-b-something-else), and [Appendix C](#appendix-c-something-with-a-code-block).
+
+## Appendix A: Something
+
+This is the first appendix section. It contains some general content to verify that appendix headings trigger a page break and render with the correct style.
+
+Lamb pig rooster sheep. Baa potato donkey mouse, at gate grain bins woof. Peacocks baa ostriches owls. Rooster celery pineapples fertilizer, a melon chirp pets in.
+
+## Appendix B: Something Else
+
+This is the second appendix section. More content here to check spacing and style consistency across multiple appendix sections.
+
+- Point one under appendix
+- Point two under appendix
+- Point three under appendix
+
+Paragraph after a list inside an appendix.
+
+## Appendix C: Something with a `code block`
+
+This appendix heading contains inline code to verify that bookmark slugs and heading rendering both handle backtick-wrapped text correctly.
+
+```typescript
+function example(): string {
+  return "hello from appendix"
+}
+```
+
+Paragraph after the code block in Appendix C.
