@@ -24,18 +24,9 @@ import { marked } from "marked"
 import { buildNumbering, buildStyleOptions } from "./document-styles"
 import { parseFrontmatter } from "./frontmatter"
 import { loadImage } from "./image"
-import { inlineTokensToRuns } from "./inline"
+import { headingSlug, inlineTokensToRuns } from "./inline"
 import { listItemsToParagraphs } from "./list"
 import { buildTable } from "./table"
-
-function headingSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-}
 
 const HEADING_STYLES: Record<number, string> = {
   1: "Heading1",

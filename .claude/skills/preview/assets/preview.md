@@ -102,3 +102,11 @@ Back to a paragraph. Then an ordered list.
 2. Two
 
 Then another paragraph to close.
+
+## Anchor Links
+
+Jump to [Heading 2](#heading-2), [Unordered List](#unordered-list), or [Code Block](#code-block).
+
+A link with special-char heading: [Table section](#table).
+
+External link for comparison: [example.com](https://example.com).
