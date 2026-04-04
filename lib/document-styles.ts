@@ -90,7 +90,7 @@ export function buildStyleOptions(
           name: "Heading 5",
           basedOn: "Normal",
           next: "Normal",
-          run: { size: sizes.heading56, bold: true, italics: true },
+          run: { size: sizes.heading56, bold: true },
           paragraph: { spacing: { before: 200, after: 160 } },
         },
         {
@@ -98,7 +98,7 @@ export function buildStyleOptions(
           name: "Heading 6",
           basedOn: "Normal",
           next: "Normal",
-          run: { size: sizes.heading56, underline: {} },
+          run: { size: sizes.heading56, bold: true },
           paragraph: { spacing: { before: 200, after: 160 } },
         },
         {
