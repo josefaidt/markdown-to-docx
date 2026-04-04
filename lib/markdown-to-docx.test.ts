@@ -572,9 +572,14 @@ describe("font size scaling", () => {
     expect(sizes.get("Heading2")).toBe(34)
   })
 
-  test("fontSize: 10 → Heading4 = 24 half-points (10+2=12pt)", async () => {
+  test("fontSize: 10 → Heading3 = 26 half-points (10+3=13pt)", async () => {
     const sizes = await styleSizes({ fontSize: 10 })
-    expect(sizes.get("Heading4")).toBe(24)
+    expect(sizes.get("Heading3")).toBe(26)
+  })
+
+  test("fontSize: 10 → Heading4 = 20 half-points (same as Normal, 10pt)", async () => {
+    const sizes = await styleSizes({ fontSize: 10 })
+    expect(sizes.get("Heading4")).toBe(20)
   })
 
   test("fontSize: 10 → CodeBlock = 20 half-points (same as Normal)", async () => {

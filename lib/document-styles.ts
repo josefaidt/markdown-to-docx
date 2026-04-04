@@ -14,7 +14,8 @@ interface FontSizes {
   heading1: number
   heading2: number
   heading3: number
-  heading456: number
+  heading4: number
+  heading56: number
   codeBlock: number
   footerText: number
 }
@@ -25,8 +26,9 @@ function fontSizes(basePt: number): FontSizes {
     normal: hp(basePt),
     heading1: hp(basePt + 14),
     heading2: hp(basePt + 7),
-    heading3: hp(basePt + 4),
-    heading456: hp(basePt + 2),
+    heading3: hp(basePt + 3),
+    heading4: hp(basePt),
+    heading56: hp(basePt),
     codeBlock: hp(basePt),
     footerText: hp(10),
   }
@@ -80,7 +82,7 @@ export function buildStyleOptions(
           name: "Heading 4",
           basedOn: "Normal",
           next: "Normal",
-          run: { size: sizes.heading456, bold: true },
+          run: { size: sizes.heading4, bold: true },
           paragraph: { spacing: { before: 200, after: 160 } },
         },
         {
@@ -88,7 +90,7 @@ export function buildStyleOptions(
           name: "Heading 5",
           basedOn: "Normal",
           next: "Normal",
-          run: { size: sizes.heading456, bold: true, italics: true },
+          run: { size: sizes.heading56, bold: true },
           paragraph: { spacing: { before: 200, after: 160 } },
         },
         {
@@ -96,7 +98,7 @@ export function buildStyleOptions(
           name: "Heading 6",
           basedOn: "Normal",
           next: "Normal",
-          run: { size: sizes.heading456, underline: {} },
+          run: { size: sizes.heading56, bold: true },
           paragraph: { spacing: { before: 200, after: 160 } },
         },
         {

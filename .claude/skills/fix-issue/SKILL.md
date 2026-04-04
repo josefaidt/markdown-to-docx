@@ -2,6 +2,7 @@
 name: fix-issue
 description: Fetch a GitHub issue, create a worktree for it, and start working
 disable-model-invocation: true
+permissionMode: acceptEdits
 ---
 
 Fix GitHub issue #$ARGUMENTS:

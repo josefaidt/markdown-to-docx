@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { ExternalHyperlink, InternalHyperlink, TextRun } from "docx"
 import { marked } from "marked"
-import { inlineTokensToRuns } from "./inline"
+import { headingSlug, inlineTokensToRuns } from "./inline"
 
 function parseInline(markdown: string) {
   const tokens = marked.lexer(markdown)
@@ -87,5 +87,45 @@ describe("inlineTokensToRuns", () => {
 
   test("empty token list → empty array", () => {
     expect(inlineTokensToRuns([])).toHaveLength(0)
+  })
+})
+
+describe("headingSlug", () => {
+  test("lowercases text", () => {
+    expect(headingSlug("Hello World")).toBe("hello-world")
+  })
+
+  test("replaces spaces with hyphens", () => {
+    expect(headingSlug("my section")).toBe("my-section")
+  })
+
+  test("strips special characters", () => {
+    expect(headingSlug("C++ Programming")).toBe("c-programming")
+    expect(headingSlug("Hello, World!")).toBe("hello-world")
+    expect(headingSlug("What's New?")).toBe("whats-new")
+  })
+
+  test("collapses consecutive hyphens", () => {
+    expect(headingSlug("foo & bar")).toBe("foo-bar")
+  })
+
+  test("preserves backtick-wrapped inline code text", () => {
+    // marked gives us the raw text 'My `code` section' for the heading
+    expect(headingSlug("My `code` section")).toBe("my-code-section")
+  })
+
+  test("[link](#anchor) → InternalHyperlink anchor is normalized via headingSlug", () => {
+    const runs = parseInline("[go there](#My-Section)")
+    expect(runs).toHaveLength(1)
+    expect(runs[0]).toBeInstanceOf(InternalHyperlink)
+    const anchor = (runs[0] as any).root[0].root.anchor
+    expect(anchor).toBe("my-section")
+  })
+
+  test("[link](#already-slugified) → anchor passes through unchanged", () => {
+    const runs = parseInline("[go there](#my-section)")
+    expect(runs).toHaveLength(1)
+    const anchor = (runs[0] as any).root[0].root.anchor
+    expect(anchor).toBe("my-section")
   })
 })
