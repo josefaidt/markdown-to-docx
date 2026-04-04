@@ -31,7 +31,11 @@
       "Bash(bun run bin/markdown-to-docx.ts *)",
       "Write(bin/**/*)",
       "Write(lib/**/*)",
-      "Write(scripts/**/*)"
+      "Write(scripts/**/*)",
+
+      "Edit(lib/**/*)",
+      "Edit(bin/**/*)",
+      "Edit(scripts/**/*)"
     ]
   },
   "hooks": {
