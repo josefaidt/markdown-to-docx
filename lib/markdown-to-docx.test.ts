@@ -231,6 +231,14 @@ describe("inline formatting", () => {
     expect(body).toContain("foo()")
   })
 
+  test("InlineCode style has color 555555 to match code blocks", async () => {
+    const { zip } = await buildDocx("`foo`")
+    const stylesXml = await zip.file("word/styles.xml")!.async("string")
+    const inlineCodeChunk =
+      stylesXml.split(/<w:style\s/).find((c) => c.includes('"InlineCode"')) ?? ""
+    expect(inlineCodeChunk).toContain('w:val="555555"')
+  })
+
   test("`code#with-hash` renders as a single InlineCode run — not split at #", async () => {
     const body = await bodyXml("Use `package.json#name` here")
     // The full text must appear as a single w:t value, not split into two runs
