@@ -269,6 +269,26 @@ describe("blockquote", () => {
     expect(body).toContain('w:val="Blockquote"')
     expect(body).toContain("Some quoted text")
   })
+
+  test("**bold** inside blockquote renders <w:b/>", async () => {
+    const body = await bodyXml("> **Note** some text")
+    expect(body).toContain('w:val="Blockquote"')
+    expect(body).toContain("<w:b/>")
+    expect(body).toContain("Note")
+  })
+
+  test("*italic* inside blockquote renders <w:i/>", async () => {
+    const body = await bodyXml("> *emphasis* here")
+    expect(body).toContain('w:val="Blockquote"')
+    expect(body).toContain("<w:i/>")
+  })
+
+  test("`code` inside blockquote renders InlineCode style", async () => {
+    const body = await bodyXml("> use `foo()` here")
+    expect(body).toContain('w:val="Blockquote"')
+    expect(body).toContain('w:val="InlineCode"')
+    expect(body).toContain("foo()")
+  })
 })
 
 describe("lists", () => {
