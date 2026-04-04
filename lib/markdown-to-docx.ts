@@ -39,6 +39,30 @@ const HEADING_STYLES: Record<number, string> = {
   6: "Heading6",
 }
 
+function collectImageHrefs(tokens: Tokens.Generic[]): string[] {
+  const hrefs: string[] = []
+  for (const token of tokens) {
+    if (token.type === "image") {
+      const href = token["href"] as string | undefined
+      if (href) hrefs.push(href)
+    }
+    const children = token["tokens"] as Tokens.Generic[] | undefined
+    if (children?.length) hrefs.push(...collectImageHrefs(children))
+  }
+  return hrefs
+}
+
+async function loadInlineImages(
+  tokens: Tokens.Generic[],
+  markdownPath: string,
+): Promise<Map<string, import("./image").ImageResult>> {
+  const hrefs = collectImageHrefs(tokens)
+  const entries = await Promise.all(
+    hrefs.map(async (href) => [href, await loadImage(href, markdownPath)] as const),
+  )
+  return new Map(entries.filter((e): e is [string, import("./image").ImageResult] => e[1] !== null))
+}
+
 async function tokensToDocx(
   tokens: Tokens.Generic[],
   markdownPath: string,
@@ -101,8 +125,12 @@ async function tokensToDocx(
             )
           }
         } else {
+          const images = await loadInlineImages(inlineTokens, markdownPath)
           elements.push(
-            new Paragraph({ children: inlineTokensToRuns(inlineTokens), style: "Normal" }),
+            new Paragraph({
+              children: inlineTokensToRuns(inlineTokens, {}, images),
+              style: "Normal",
+            }),
           )
         }
         break
