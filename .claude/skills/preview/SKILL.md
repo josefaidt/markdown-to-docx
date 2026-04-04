@@ -15,12 +15,14 @@ Generate a `.docx` from the test fixture at `scripts/preview.md` and open it so 
 osascript -e '
   tell application "Microsoft Word"
     if it is running then
-      set docPath to POSIX file "/tmp/preview.docx"
-      repeat with d in documents
-        if (get full name of d) is (docPath as string) then
-          close d saving no
-        end if
-      end repeat
+      if (count of documents) > 0 then
+        set docPath to POSIX file "/tmp/preview.docx"
+        repeat with d in documents
+          if (get full name of d) is (docPath as string) then
+            close d saving no
+          end if
+        end repeat
+      end if
     end if
   end tell
 ' && \
