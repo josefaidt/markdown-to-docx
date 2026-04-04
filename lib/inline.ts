@@ -12,6 +12,15 @@ function applyTypography(text: string): string {
   return text.replace(/--/g, "\u2014")
 }
 
+export function headingSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+}
+
 export function inlineTokensToRuns(tokens: Tokens.Generic[], ctx: InlineCtx = {}): InlineChild[] {
   const runs: InlineChild[] = []
   for (const token of tokens) {
@@ -53,7 +62,7 @@ export function inlineTokensToRuns(tokens: Tokens.Generic[], ctx: InlineCtx = {}
         if (linkHref.startsWith("#")) {
           runs.push(
             new InternalHyperlink({
-              anchor: linkHref.slice(1),
+              anchor: headingSlug(linkHref.slice(1)),
               children: [new TextRun({ text: linkText, style: "Hyperlink" })],
             }),
           )
