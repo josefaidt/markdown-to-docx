@@ -1,13 +1,5 @@
 import type { Tokens } from "marked"
-import {
-  AlignmentType,
-  ImportedXmlComponent,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
-  VerticalAlignTable,
-} from "docx"
+import { AlignmentType, ImportedXmlComponent, Paragraph, Table, TableCell, TableRow } from "docx"
 import { inlineTokensToRuns } from "./inline"
 
 interface ParsedTableCell {
@@ -17,28 +9,20 @@ interface ParsedTableCell {
   align: "center" | "left" | "right" | null
 }
 
-function cellAlignType(
-  align: "center" | "left" | "right" | null,
-): (typeof AlignmentType)[keyof typeof AlignmentType] {
-  if (align === "center") return AlignmentType.CENTER
-  if (align === "right") return AlignmentType.RIGHT
-  return AlignmentType.LEFT
-}
-
 export function buildTable(token: Tokens.Generic): Table {
   const rows: TableRow[] = []
 
   const cellParagraph = (cell: ParsedTableCell, bold = false) =>
     new Paragraph({
       children: inlineTokensToRuns(cell.tokens, { bold }),
-      alignment: cellAlignType(cell.align),
+      ...(cell.align === "center" && { alignment: AlignmentType.CENTER }),
+      ...(cell.align === "right" && { alignment: AlignmentType.RIGHT }),
       spacing: { after: 0 },
     })
 
   const tableCell = (cell: ParsedTableCell, bold = false) =>
     new TableCell({
       children: [cellParagraph(cell, bold)],
-      verticalAlign: VerticalAlignTable.CENTER,
     })
 
   const header = token["header"] as ParsedTableCell[] | undefined
