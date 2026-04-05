@@ -7,5 +7,5 @@ STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.ts$' || true)
 
 [ -z "$STAGED" ] && exit 0
 
-echo "$STAGED" | xargs oxfmt --check
-echo "$STAGED" | xargs oxlint
+echo "$STAGED" | xargs bunx oxfmt --check
+echo "$STAGED" | xargs bunx oxlint
