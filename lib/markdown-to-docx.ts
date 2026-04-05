@@ -73,7 +73,9 @@ async function tokensToDocx(
   let bookmarkId = 0
   let prevTokenType: string | undefined
 
-  for (const token of tokens) {
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]!
+    const nextTokenType = tokens[i + 1]?.type
     switch (token.type) {
       case "heading": {
         const text = token["text"] as string | undefined
@@ -290,7 +292,7 @@ async function tokensToDocx(
       }
 
       case "space": {
-        if (prevTokenType === "list") {
+        if (prevTokenType === "list" && nextTokenType === "list") {
           elements.push(
             new Paragraph({
               children: [new TextRun({ size: 12 })],

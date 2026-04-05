@@ -465,6 +465,24 @@ describe("list spacing", () => {
     const spacerCount = (body.match(/<w:sz w:val="12"\/>/g) ?? []).length
     expect(spacerCount).toBe(0)
   })
+
+  test("blank line between list and following paragraph does not insert a spacer", async () => {
+    const md = "- alpha\n- beta\n\nSome paragraph text."
+    const body = await bodyXml(md)
+    expect(body).toContain("alpha")
+    expect(body).toContain("Some paragraph text.")
+    const spacerCount = (body.match(/<w:sz w:val="12"\/>/g) ?? []).length
+    expect(spacerCount).toBe(0)
+  })
+
+  test("blank line between list and following heading does not insert a spacer", async () => {
+    const md = "- alpha\n- beta\n\n## Next Section"
+    const body = await bodyXml(md)
+    expect(body).toContain("alpha")
+    expect(body).toContain("Next Section")
+    const spacerCount = (body.match(/<w:sz w:val="12"\/>/g) ?? []).length
+    expect(spacerCount).toBe(0)
+  })
 })
 
 describe("list inline formatting", () => {
