@@ -114,6 +114,19 @@ describe("headingSlug", () => {
     expect(headingSlug("My `code` section")).toBe("my-code-section")
   })
 
+  test("truncates to 40 characters (Word bookmark limit)", () => {
+    // "Appendix C: Modern JavaScript Tooling Benchmarks" slugifies to
+    // "appendix-c-modern-javascript-tooling-benchmarks" (47 chars) — must be capped at 40
+    expect(headingSlug("Appendix C: Modern JavaScript Tooling Benchmarks")).toBe(
+      "appendix-c-modern-javascript-tooling-ben",
+    )
+  })
+
+  test("does not leave a trailing hyphen after truncation", () => {
+    // if the 40th character lands on a hyphen, strip it
+    expect(headingSlug("a".repeat(38) + " b c")).toBe("a".repeat(38) + "-b")
+  })
+
   test("[link](#anchor) → InternalHyperlink anchor is normalized via headingSlug", () => {
     const runs = parseInline("[go there](#My-Section)")
     expect(runs).toHaveLength(1)

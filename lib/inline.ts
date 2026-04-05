@@ -13,13 +13,19 @@ function applyTypography(text: string): string {
   return text.replace(/--/g, "\u2014")
 }
 
+// Word silently truncates bookmark names to 40 characters, so we enforce the
+// same limit here so that BookmarkStart names and InternalHyperlink anchors
+// always agree.
+const WORD_BOOKMARK_MAX_LENGTH = 40
+
 export function headingSlug(text: string): string {
-  return text
+  const slug = text
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
+  return slug.slice(0, WORD_BOOKMARK_MAX_LENGTH).replace(/-+$/g, "")
 }
 
 export function inlineTokensToRuns(
