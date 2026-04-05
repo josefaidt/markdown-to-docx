@@ -162,3 +162,11 @@ function example(): string {
 ```
 
 Paragraph after the code block in Appendix C.
+
+## Images
+
+A standalone block image:
+
+![Goofy Llama](./goofy-llama.jpg)
+
+An image inline with text: here is the llama ![Goofy Llama](./goofy-llama.jpg) mid-sentence.

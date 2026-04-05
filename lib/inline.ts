@@ -1,7 +1,8 @@
+import type { ImageResult } from "./image"
 import type { Tokens } from "marked"
-import { ExternalHyperlink, InternalHyperlink, ShadingType, TextRun } from "docx"
+import { ExternalHyperlink, ImageRun, InternalHyperlink, ShadingType, TextRun } from "docx"
 
-export type InlineChild = TextRun | ExternalHyperlink | InternalHyperlink
+export type InlineChild = TextRun | ExternalHyperlink | InternalHyperlink | ImageRun
 
 interface InlineCtx {
   bold?: boolean
@@ -21,7 +22,11 @@ export function headingSlug(text: string): string {
     .replace(/^-|-$/g, "")
 }
 
-export function inlineTokensToRuns(tokens: Tokens.Generic[], ctx: InlineCtx = {}): InlineChild[] {
+export function inlineTokensToRuns(
+  tokens: Tokens.Generic[],
+  ctx: InlineCtx = {},
+  images: ReadonlyMap<string, ImageResult> = new Map(),
+): InlineChild[] {
   const runs: InlineChild[] = []
   for (const token of tokens) {
     // Use bracket notation because Tokens.Generic has an index signature
@@ -32,16 +37,16 @@ export function inlineTokensToRuns(tokens: Tokens.Generic[], ctx: InlineCtx = {}
     switch (token.type) {
       case "text":
         if (children?.length) {
-          runs.push(...inlineTokensToRuns(children, ctx))
+          runs.push(...inlineTokensToRuns(children, ctx, images))
         } else {
           runs.push(new TextRun({ text: text ?? "", ...ctx }))
         }
         break
       case "strong":
-        runs.push(...inlineTokensToRuns(children ?? [], { ...ctx, bold: true }))
+        runs.push(...inlineTokensToRuns(children ?? [], { ...ctx, bold: true }, images))
         break
       case "em":
-        runs.push(...inlineTokensToRuns(children ?? [], { ...ctx, italics: true }))
+        runs.push(...inlineTokensToRuns(children ?? [], { ...ctx, italics: true }, images))
         break
       case "codespan":
         runs.push(
@@ -73,6 +78,24 @@ export function inlineTokensToRuns(tokens: Tokens.Generic[], ctx: InlineCtx = {}
               children: [new TextRun({ text: linkText, style: "Hyperlink" })],
             }),
           )
+        }
+        break
+      }
+      case "image": {
+        const imgHref = href ?? ""
+        const alt = (token["text"] as string | undefined) ?? ""
+        const result = images.get(imgHref)
+        if (result) {
+          runs.push(
+            new ImageRun({
+              type: result.type,
+              data: result.data,
+              transformation: { width: result.width, height: result.height },
+              altText: { name: alt, description: alt },
+            }),
+          )
+        } else {
+          runs.push(new TextRun({ text: `[Image: ${alt}]`, italics: true, color: "888888" }))
         }
         break
       }

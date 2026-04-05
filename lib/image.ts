@@ -1,7 +1,7 @@
 import { resolve, dirname } from "node:path"
 import probe from "probe-image-size"
 
-const MAX_IMAGE_WIDTH_EMU = 914400 * 6
+const MAX_IMAGE_WIDTH_PX = 96 * 6
 
 export type SupportedImageType = "jpg" | "png" | "gif" | "bmp"
 const SUPPORTED_TYPES = new Set<string>(["jpg", "jpeg", "png", "gif", "bmp"])
@@ -27,8 +27,8 @@ function extToType(url: string): SupportedImageType | null {
   return ext === "jpeg" ? "jpg" : (ext as SupportedImageType)
 }
 
-function scaleToEmu(px: number, scale: number) {
-  return Math.round(((px * 914400) / 96) * scale)
+function scalePx(px: number, scale: number) {
+  return Math.round(px * scale)
 }
 
 async function fetchImageBuffer(url: string): Promise<ImageResult | null> {
@@ -40,12 +40,12 @@ async function fetchImageBuffer(url: string): Promise<ImageResult | null> {
     if (!info) return null
     const type = mimeToType(info.mime) ?? extToType(url)
     if (!type) return null
-    const scale = Math.min(1, MAX_IMAGE_WIDTH_EMU / ((info.width * 914400) / 96))
+    const scale = Math.min(1, MAX_IMAGE_WIDTH_PX / info.width)
     return {
       data,
       type,
-      width: scaleToEmu(info.width, scale),
-      height: scaleToEmu(info.height, scale),
+      width: scalePx(info.width, scale),
+      height: scalePx(info.height, scale),
     }
   } catch {
     return null
@@ -59,12 +59,12 @@ async function loadLocalImage(filePath: string): Promise<ImageResult | null> {
     if (!info) return null
     const type = mimeToType(info.mime) ?? extToType(filePath)
     if (!type) return null
-    const scale = Math.min(1, MAX_IMAGE_WIDTH_EMU / ((info.width * 914400) / 96))
+    const scale = Math.min(1, MAX_IMAGE_WIDTH_PX / info.width)
     return {
       data,
       type,
-      width: scaleToEmu(info.width, scale),
-      height: scaleToEmu(info.height, scale),
+      width: scalePx(info.width, scale),
+      height: scalePx(info.height, scale),
     }
   } catch {
     return null
