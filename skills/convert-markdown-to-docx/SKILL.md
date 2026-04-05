@@ -67,3 +67,21 @@ title: My Document
 
 ...
 ```
+
+## Normalizing links and images before conversion
+
+`markdown-to-docx` cannot resolve relative paths at conversion time. Before converting, rewrite any relative links and image paths to absolute URLs or absolute file paths.
+
+### Links
+
+1. Scan the markdown body for relative links — e.g. `](./other-doc.md)`, `](../assets/fig.png)`
+2. Resolve each to an absolute URL or absolute file path
+3. If a target cannot be resolved, degrade gracefully: remove the href and render the link text as bold (`**link text**`), and warn the user
+
+### Images
+
+Apply the same rule to image references: rewrite `![alt](./img.png)` to an absolute path or URL. If the image cannot be resolved, remove it and warn the user.
+
+### Workflow
+
+Write the rewritten content to a temp file (e.g. `/tmp/converting-<original-name>.md`) and pass that to `markdown-to-docx`. **Never modify the original file.** Always regenerate the temp file from the source before each conversion run — do not reuse a previously created temp file.
