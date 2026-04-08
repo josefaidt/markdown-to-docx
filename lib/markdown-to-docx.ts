@@ -66,6 +66,7 @@ async function loadInlineImages(
 async function tokensToDocx(
   tokens: Tokens.Generic[],
   markdownPath: string,
+  useTemplate = false,
 ): Promise<{ elements: Array<Paragraph | Table>; orderedRefs: string[] }> {
   const elements: Array<Paragraph | Table> = []
   const orderedRefs: string[] = []
@@ -113,7 +114,7 @@ async function tokensToDocx(
                     altText: { name: alt, description: alt },
                   }),
                 ],
-                spacing: { before: 320, after: 320 },
+                ...(useTemplate ? {} : { spacing: { before: 320, after: 320 } }),
               }),
             )
           } else {
@@ -130,7 +131,7 @@ async function tokensToDocx(
           const images = await loadInlineImages(inlineTokens, markdownPath)
           elements.push(
             new Paragraph({
-              children: inlineTokensToRuns(inlineTokens, {}, images),
+              children: inlineTokensToRuns(inlineTokens, {}, images, useTemplate),
               style: "Normal",
             }),
           )
@@ -177,47 +178,51 @@ async function tokensToDocx(
                 }),
             )
           : codeText.split("\n").map((line) => new Paragraph({ text: line, style: "CodeBlock" }))
-        elements.push(
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            borders: {
-              top: { style: BorderStyle.NONE, size: 0 },
-              bottom: { style: BorderStyle.NONE, size: 0 },
-              left: { style: BorderStyle.NONE, size: 0 },
-              right: { style: BorderStyle.NONE, size: 0 },
-              insideHorizontal: { style: BorderStyle.NONE, size: 0 },
-              insideVertical: { style: BorderStyle.NONE, size: 0 },
-            },
-            rows: [
-              new TableRow({
-                children: [
-                  new TableCell({
-                    children: codeLines,
-                    shading: { type: ShadingType.CLEAR, color: "F6F8FA", fill: "F6F8FA" },
-                    margins: {
-                      top: convertInchesToTwip(0.1),
-                      bottom: convertInchesToTwip(0.1),
-                      left: convertInchesToTwip(0.15),
-                      right: convertInchesToTwip(0.15),
-                    },
-                    borders: {
-                      top: { style: BorderStyle.NONE, size: 0 },
-                      bottom: { style: BorderStyle.NONE, size: 0 },
-                      left: { style: BorderStyle.NONE, size: 0 },
-                      right: { style: BorderStyle.NONE, size: 0 },
-                    },
-                  }),
-                ],
-              }),
-            ],
-          }),
-        )
-        elements.push(
-          new Paragraph({
-            children: [new TextRun({ size: 12 })],
-            spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const },
-          }),
-        )
+        if (useTemplate) {
+          elements.push(...codeLines)
+        } else {
+          elements.push(
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              borders: {
+                top: { style: BorderStyle.NONE, size: 0 },
+                bottom: { style: BorderStyle.NONE, size: 0 },
+                left: { style: BorderStyle.NONE, size: 0 },
+                right: { style: BorderStyle.NONE, size: 0 },
+                insideHorizontal: { style: BorderStyle.NONE, size: 0 },
+                insideVertical: { style: BorderStyle.NONE, size: 0 },
+              },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: codeLines,
+                      shading: { type: ShadingType.CLEAR, color: "F6F8FA", fill: "F6F8FA" },
+                      margins: {
+                        top: convertInchesToTwip(0.1),
+                        bottom: convertInchesToTwip(0.1),
+                        left: convertInchesToTwip(0.15),
+                        right: convertInchesToTwip(0.15),
+                      },
+                      borders: {
+                        top: { style: BorderStyle.NONE, size: 0 },
+                        bottom: { style: BorderStyle.NONE, size: 0 },
+                        left: { style: BorderStyle.NONE, size: 0 },
+                        right: { style: BorderStyle.NONE, size: 0 },
+                      },
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          )
+          elements.push(
+            new Paragraph({
+              children: [new TextRun({ size: 12 })],
+              spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const },
+            }),
+          )
+        }
         break
       }
 
@@ -230,23 +235,27 @@ async function tokensToDocx(
             )
           }
         }
-        elements.push(
-          new Paragraph({
-            children: [new TextRun({ size: 12 })],
-            spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const },
-          }),
-        )
+        if (!useTemplate) {
+          elements.push(
+            new Paragraph({
+              children: [new TextRun({ size: 12 })],
+              spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const },
+            }),
+          )
+        }
         break
       }
 
       case "table": {
         elements.push(buildTable(token))
-        elements.push(
-          new Paragraph({
-            children: [new TextRun({ size: 12 })],
-            spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const },
-          }),
-        )
+        if (!useTemplate) {
+          elements.push(
+            new Paragraph({
+              children: [new TextRun({ size: 12 })],
+              spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const },
+            }),
+          )
+        }
         break
       }
 
@@ -265,7 +274,7 @@ async function tokensToDocx(
                   altText: { name: alt, description: alt },
                 }),
               ],
-              spacing: { before: 320, after: 320 },
+              ...(useTemplate ? {} : { spacing: { before: 320, after: 320 } }),
             }),
           )
         } else {
@@ -281,18 +290,20 @@ async function tokensToDocx(
 
       case "hr": {
         elements.push(
-          new Paragraph({
-            border: {
-              bottom: { style: BorderStyle.SINGLE, size: 12, color: "AAAAAA", space: 1 },
-            },
-            spacing: { before: 240, after: 240 },
-          }),
+          useTemplate
+            ? new Paragraph({ style: "Normal" })
+            : new Paragraph({
+                border: {
+                  bottom: { style: BorderStyle.SINGLE, size: 12, color: "AAAAAA", space: 1 },
+                },
+                spacing: { before: 240, after: 240 },
+              }),
         )
         break
       }
 
       case "space": {
-        if (prevTokenType === "list" && nextTokenType === "list") {
+        if (!useTemplate && prevTokenType === "list" && nextTokenType === "list") {
           elements.push(
             new Paragraph({
               children: [new TextRun({ size: 12 })],
@@ -339,7 +350,11 @@ export async function convertMarkdownToDocx(
   const content = await Bun.file(markdownPath).text()
   const { body, data } = parseFrontmatter(content)
   const tokens = marked.lexer(body) as Tokens.Generic[]
-  const { elements, orderedRefs } = await tokensToDocx(tokens, markdownPath)
+  const { elements, orderedRefs } = await tokensToDocx(
+    tokens,
+    markdownPath,
+    !!options.externalStylesXml,
+  )
 
   // CLI flags take precedence; frontmatter.title is the fallback for headerLabel
   const headerLabel =
