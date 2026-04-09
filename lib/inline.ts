@@ -7,6 +7,7 @@ export type InlineChild = TextRun | ExternalHyperlink | InternalHyperlink | Imag
 interface InlineCtx {
   bold?: boolean
   italics?: boolean
+  useTemplate?: boolean
 }
 
 function applyTypography(text: string): string {
@@ -32,6 +33,7 @@ export function inlineTokensToRuns(
   tokens: Tokens.Generic[],
   ctx: InlineCtx = {},
   images: ReadonlyMap<string, ImageResult> = new Map(),
+  useTemplate = false,
 ): InlineChild[] {
   const runs: InlineChild[] = []
   for (const token of tokens) {
@@ -43,16 +45,20 @@ export function inlineTokensToRuns(
     switch (token.type) {
       case "text":
         if (children?.length) {
-          runs.push(...inlineTokensToRuns(children, ctx, images))
+          runs.push(...inlineTokensToRuns(children, ctx, images, useTemplate))
         } else {
           runs.push(new TextRun({ text: text ?? "", ...ctx }))
         }
         break
       case "strong":
-        runs.push(...inlineTokensToRuns(children ?? [], { ...ctx, bold: true }, images))
+        runs.push(
+          ...inlineTokensToRuns(children ?? [], { ...ctx, bold: true }, images, useTemplate),
+        )
         break
       case "em":
-        runs.push(...inlineTokensToRuns(children ?? [], { ...ctx, italics: true }, images))
+        runs.push(
+          ...inlineTokensToRuns(children ?? [], { ...ctx, italics: true }, images, useTemplate),
+        )
         break
       case "codespan":
         runs.push(
@@ -60,7 +66,9 @@ export function inlineTokensToRuns(
             text: rawText ?? "",
             ...ctx,
             style: "InlineCode",
-            shading: { type: ShadingType.CLEAR, color: "F2F2F2", fill: "F2F2F2" },
+            ...(useTemplate
+              ? {}
+              : { shading: { type: ShadingType.CLEAR, color: "F2F2F2", fill: "F2F2F2" } }),
           }),
         )
         break
