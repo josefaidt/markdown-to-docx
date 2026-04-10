@@ -204,6 +204,12 @@ describe("headings", () => {
     expect(ids.length).toBe(3)
     expect(new Set(ids).size).toBe(3)
   })
+
+  test("noBookmarks suppresses bookmark elements", async () => {
+    const body = await bodyXml("## My Section", { noBookmarks: true })
+    expect(body).not.toContain("<w:bookmarkStart")
+    expect(body).not.toContain("<w:bookmarkEnd")
+  })
 })
 
 describe("inline formatting", () => {
