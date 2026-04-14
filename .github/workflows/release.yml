@@ -116,7 +116,7 @@ jobs:
           - artifact: markdown-to-docx-darwin-arm64
             runner: macos-latest
           - artifact: markdown-to-docx-darwin-x64
-            runner: macos-13
+            runner: macos-latest
           - artifact: markdown-to-docx-windows-x64.exe
             runner: windows-latest
     runs-on: ${{ matrix.runner }}
