@@ -66,7 +66,7 @@ async function loadInlineImages(
 async function tokensToDocx(
   tokens: Tokens.Generic[],
   markdownPath: string,
-  noBookmarks = false,
+  bookmarks = false,
 ): Promise<{ elements: Array<Paragraph | Table>; orderedRefs: string[] }> {
   const elements: Array<Paragraph | Table> = []
   const orderedRefs: string[] = []
@@ -83,7 +83,7 @@ async function tokensToDocx(
         const inlineTokens = (token["tokens"] as Tokens.Generic[] | undefined) ?? []
         const isFirstAppendix = firstAppendix && text?.includes("Appendix")
         if (isFirstAppendix) firstAppendix = false
-        const slug = !noBookmarks && text ? headingSlug(text) : undefined
+        const slug = bookmarks && text ? headingSlug(text) : undefined
         const runs = inlineTokensToRuns(inlineTokens)
         const id = ++bookmarkId
         elements.push(
@@ -330,8 +330,8 @@ export interface ConvertOptions {
   externalStylesXml?: string
   /** Base font size in pt; all readable styles scale from this (default: 11) */
   fontSize?: number
-  /** Disable automatic bookmark generation for headings */
-  noBookmarks?: boolean
+  /** Enable automatic bookmark generation for headings */
+  bookmarks?: boolean
 }
 
 export async function convertMarkdownToDocx(
@@ -342,7 +342,7 @@ export async function convertMarkdownToDocx(
   const content = await Bun.file(markdownPath).text()
   const { body, data } = parseFrontmatter(content)
   const tokens = marked.lexer(body) as Tokens.Generic[]
-  const { elements, orderedRefs } = await tokensToDocx(tokens, markdownPath, options.noBookmarks)
+  const { elements, orderedRefs } = await tokensToDocx(tokens, markdownPath, options.bookmarks)
 
   // CLI flags take precedence; frontmatter.title is the fallback for headerLabel
   const headerLabel =
