@@ -1,9 +1,17 @@
 name: Setup
 description: Checkout, install Bun, and install dependencies
 
+inputs:
+  bun-version:
+    description: Bun version to install (defaults to latest)
+    required: false
+    default: latest
+
 runs:
   using: composite
   steps:
     - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
     - run: bun ci
       shell: bash

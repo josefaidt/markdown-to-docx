@@ -93,6 +93,9 @@ jobs:
         with:
           ref: ${{ needs.release.outputs.tag }}
       - uses: ./.github/actions/setup
+        with:
+          # bun 1.3.12 produces broken darwin binaries when cross-compiled from Linux
+          bun-version: 1.3.11
       - name: Build
         run: bun build --compile --target=${{ matrix.target }} --outfile=${{ matrix.artifact }} bin/markdown-to-docx.ts
       - name: Upload binary to release
@@ -100,9 +103,41 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${{ needs.release.outputs.tag }}" "${{ matrix.artifact }}" --repo "${{ github.repository }}"
 
+  smoke-test:
+    name: Smoke test (${{ matrix.artifact }})
+    needs: [release, build]
+    strategy:
+      matrix:
+        include:
+          - artifact: markdown-to-docx-linux-x64
+            runner: ubuntu-latest
+          - artifact: markdown-to-docx-darwin-arm64
+            runner: macos-latest
+          - artifact: markdown-to-docx-darwin-x64
+            runner: macos-13
+          - artifact: markdown-to-docx-windows-x64.exe
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Download binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "${{ needs.release.outputs.tag }}" --pattern "${{ matrix.artifact }}" --repo "${{ github.repository }}"
+      - name: Smoke test (unix)
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x "${{ matrix.artifact }}"
+          ./"${{ matrix.artifact }}" --help
+          ./"${{ matrix.artifact }}" --version
+      - name: Smoke test (windows)
+        if: runner.os == 'Windows'
+        run: |
+          .\${{ matrix.artifact }} --help
+          .\${{ matrix.artifact }} --version
+
   publish:
     name: Publish release
-    needs: [release, build]
+    needs: [release, build, smoke-test]
     runs-on: ubuntu-latest
     permissions:
       contents: write
