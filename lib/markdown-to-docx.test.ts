@@ -182,33 +182,33 @@ describe("headings", () => {
     expect(body).not.toContain("<w:pageBreakBefore/>")
   })
 
-  test("heading gets a bookmark with a slugified id", async () => {
+  test("headings do not get bookmarks by default", async () => {
     const body = await bodyXml("## My Section")
+    expect(body).not.toContain("<w:bookmarkStart")
+    expect(body).not.toContain("<w:bookmarkEnd")
+  })
+
+  test("heading gets a bookmark with a slugified id when bookmarks enabled", async () => {
+    const body = await bodyXml("## My Section", { bookmarks: true })
     expect(body).toContain("<w:bookmarkStart")
     expect(body).toContain('w:name="my-section"')
   })
 
   test("heading slug strips punctuation and lowercases", async () => {
-    const body = await bodyXml("# Hello, World!")
+    const body = await bodyXml("# Hello, World!", { bookmarks: true })
     expect(body).toContain('w:name="hello-world"')
   })
 
   test("heading slug collapses multiple spaces/hyphens", async () => {
-    const body = await bodyXml("## Two  Words")
+    const body = await bodyXml("## Two  Words", { bookmarks: true })
     expect(body).toContain('w:name="two-words"')
   })
 
   test("multiple headings get unique bookmark ids", async () => {
-    const body = await bodyXml("# One\n\n## Two\n\n### Three")
+    const body = await bodyXml("# One\n\n## Two\n\n### Three", { bookmarks: true })
     const ids = [...body.matchAll(/w:bookmarkStart[^>]+w:id="(\d+)"/g)].map((m) => m[1])
     expect(ids.length).toBe(3)
     expect(new Set(ids).size).toBe(3)
-  })
-
-  test("noBookmarks suppresses bookmark elements", async () => {
-    const body = await bodyXml("## My Section", { noBookmarks: true })
-    expect(body).not.toContain("<w:bookmarkStart")
-    expect(body).not.toContain("<w:bookmarkEnd")
   })
 })
 

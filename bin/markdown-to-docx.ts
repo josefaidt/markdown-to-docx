@@ -17,8 +17,8 @@ Options:
   --font-size <n>    Base font size in pt; all styles scale from this (default: 12)
   --footer <text>    Text to display in the bottom-left footer
   --header <text>    Text to display left-aligned in the header (skipped on the first page)
+  --bookmarks        Enable automatic bookmark generation for headings
   --line-numbers     Enable Word's built-in document line numbering
-  --no-bookmarks     Disable automatic bookmark generation for headings
   --page-numbers     Add a right-aligned page number to the footer
   --template <path>  Path to a .dotx template file to load styles from
 
@@ -108,8 +108,8 @@ function parseArgs(args: string[]): {
   const positional = filteredArgs.filter((a) => !a.startsWith("-"))
 
   const knownFlags = new Set([
+    "--bookmarks",
     "--line-numbers",
-    "--no-bookmarks",
     "--page-numbers",
     "--help",
     "--version",
@@ -139,8 +139,8 @@ function parseArgs(args: string[]): {
     outputPath: resolvedOutput,
     templatePath,
     options: {
+      bookmarks: flags.includes("--bookmarks"),
       lineNumbers: flags.includes("--line-numbers"),
-      noBookmarks: flags.includes("--no-bookmarks"),
       footerPageNumber: flags.includes("--page-numbers"),
       headerLabel,
       footerLabel,
