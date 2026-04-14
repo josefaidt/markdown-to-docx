@@ -107,7 +107,7 @@ jobs:
     name: Smoke test (${{ matrix.artifact }})
     needs: [release, build]
     permissions:
-      contents: read
+      contents: write
     strategy:
       matrix:
         include:
