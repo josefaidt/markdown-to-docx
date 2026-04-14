@@ -53,7 +53,6 @@ case "$OS-$ARCH" in
     ;;
 esac
 
-printf "Fetching latest release...\n"
 LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
 
 if [ -z "$LATEST" ]; then
