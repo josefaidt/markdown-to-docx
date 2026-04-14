@@ -10,6 +10,23 @@ BIN_NAME="markdown-to-docx"
 XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 XDG_BIN_HOME="${XDG_BIN_HOME:-$HOME/.local/bin}"
 
+# ANSI colors — only when stdout is a terminal
+if [ -t 1 ]; then
+  BOLD=$(printf '\033[1m')
+  GREEN=$(printf '\033[1;32m')
+  CYAN=$(printf '\033[0;36m')
+  YELLOW=$(printf '\033[0;33m')
+  DIM=$(printf '\033[2m')
+  RESET=$(printf '\033[0m')
+else
+  BOLD=""
+  GREEN=""
+  CYAN=""
+  YELLOW=""
+  DIM=""
+  RESET=""
+fi
+
 if [ -n "$INSTALL_DIR" ]; then
   # Manual override — install directly, no symlink
   DATA_BIN_DIR="$INSTALL_DIR"
@@ -31,15 +48,16 @@ case "$OS-$ARCH" in
   Darwin-x86_64) ARTIFACT="${BIN_NAME}-darwin-x64" ;;
   Darwin-arm64)  ARTIFACT="${BIN_NAME}-darwin-arm64" ;;
   *)
-    echo "Unsupported platform: $OS-$ARCH"
+    printf "Unsupported platform: %s\n" "$OS-$ARCH"
     exit 1
     ;;
 esac
 
+printf "Fetching latest release...\n"
 LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
 
 if [ -z "$LATEST" ]; then
-  echo "Failed to fetch latest release version"
+  printf "Failed to fetch latest release version\n"
   exit 1
 fi
 
@@ -47,7 +65,7 @@ IS_UPDATE=0
 if [ -x "$INSTALL_PATH" ]; then
   CURRENT=$("$INSTALL_PATH" --version 2>/dev/null || echo "")
   if [ "$CURRENT" = "$LATEST" ]; then
-    echo "${BIN_NAME} is already up to date (${LATEST})"
+    printf "%s✔%s %s is already up to date (%s)\n" "$GREEN" "$RESET" "$BIN_NAME" "$LATEST"
     exit 0
   fi
   IS_UPDATE=1
@@ -55,9 +73,15 @@ fi
 
 URL="https://github.com/${REPO}/releases/download/${LATEST}/${ARTIFACT}"
 
+printf "Downloading %s %s...\n" "$BIN_NAME" "$LATEST"
 mkdir -p "$DATA_BIN_DIR"
 TMP=$(mktemp)
-curl -fsSL "$URL" -o "$TMP"
+# Show a progress bar when stderr is a terminal, silent otherwise
+if [ -t 2 ]; then
+  curl -fL --progress-bar "$URL" -o "$TMP"
+else
+  curl -fsSL "$URL" -o "$TMP"
+fi
 chmod +x "$TMP"
 mv "$TMP" "$INSTALL_PATH"
 
@@ -70,25 +94,25 @@ DISPLAY_PATH="${LINK_PATH:-$INSTALL_PATH}"
 # Shorten $HOME to ~
 DISPLAY_PATH_SHORT=$(echo "$DISPLAY_PATH" | sed "s|^$HOME|~|")
 
-echo ""
+printf "\n"
 if [ "$IS_UPDATE" = "1" ]; then
-  echo "✔ ${BIN_NAME} successfully updated!"
+  printf "%s✔%s %s%s successfully updated!%s\n" "$GREEN" "$RESET" "$BOLD" "$BIN_NAME" "$RESET"
 else
-  echo "✔ ${BIN_NAME} successfully installed!"
+  printf "%s✔%s %s%s successfully installed!%s\n" "$GREEN" "$RESET" "$BOLD" "$BIN_NAME" "$RESET"
 fi
-echo ""
-echo "  Version:  ${LATEST}"
-echo "  Location: ${DISPLAY_PATH_SHORT}"
-echo ""
-echo "  Next: Run ${BIN_NAME} --help to get started"
-echo ""
+printf "\n"
+printf "  Version:  %s%s%s\n" "$DIM" "$LATEST" "$RESET"
+printf "  Location: %s%s%s\n" "$DIM" "$DISPLAY_PATH_SHORT" "$RESET"
+printf "\n"
+printf "  Next: Run %s%s --help%s to get started\n" "$CYAN" "$BIN_NAME" "$RESET"
+printf "\n"
 
 case ":$PATH:" in
   *":${XDG_BIN_HOME}:"*) ;;
   *)
-    echo "Note: ${XDG_BIN_HOME} is not in your PATH."
-    echo "Add the following to your shell profile:"
-    echo "  export PATH=\"\$PATH:${XDG_BIN_HOME}\""
-    echo ""
+    printf "%sNote:%s %s is not in your PATH.\n" "$YELLOW" "$RESET" "$XDG_BIN_HOME"
+    printf "Add the following to your shell profile:\n"
+    printf "  %sexport PATH=\"\$PATH:%s\"%s\n" "$CYAN" "$XDG_BIN_HOME" "$RESET"
+    printf "\n"
     ;;
 esac
