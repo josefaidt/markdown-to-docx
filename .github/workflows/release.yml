@@ -121,10 +121,21 @@ jobs:
             runner: windows-latest
     runs-on: ${{ matrix.runner }}
     steps:
-      - name: Download binary
+      - name: Download binary (unix)
+        if: runner.os != 'Windows'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release download "${{ needs.release.outputs.tag }}" --pattern "${{ matrix.artifact }}" --repo "${{ github.repository }}"
+        run: |
+          URL=$(gh api repos/${{ github.repository }}/releases --jq '.[] | select(.tag_name == "${{ needs.release.outputs.tag }}") | .assets[] | select(.name == "${{ matrix.artifact }}") | .url')
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/octet-stream" "$URL" -o "${{ matrix.artifact }}"
+      - name: Download binary (windows)
+        if: runner.os == 'Windows'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $url = gh api repos/${{ github.repository }}/releases --jq '.[] | select(.tag_name == "${{ needs.release.outputs.tag }}") | .assets[] | select(.name == "${{ matrix.artifact }}") | .url'
+          curl.exe -fsSL -H "Authorization: Bearer $env:GH_TOKEN" -H "Accept: application/octet-stream" $url -o "${{ matrix.artifact }}"
+        shell: pwsh
       - name: Smoke test (unix)
         if: runner.os != 'Windows'
         run: |
