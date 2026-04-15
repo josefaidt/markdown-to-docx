@@ -151,3 +151,34 @@ jobs:
           gh release edit "${{ needs.release.outputs.tag }}" \
             --repo "${{ github.repository }}" \
             --draft=false
+
+  cleanup:
+    name: Cleanup failed release
+    needs: [release, build, smoke-test]
+    if: always() && failure() && needs.release.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Revert version bump
+        run: |
+          git revert HEAD --no-edit
+          git push origin HEAD:main
+      - name: Delete tag
+        run: |
+          git push origin --delete "${{ needs.release.outputs.tag }}" || true
+      - name: Delete draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete "${{ needs.release.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --yes || true
