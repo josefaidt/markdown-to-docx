@@ -1,6 +1,6 @@
 {
   "name": "@josefaidt/markdown-to-docx",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "bin": {
     "markdown-to-docx": "./bin/markdown-to-docx.ts"
   },
