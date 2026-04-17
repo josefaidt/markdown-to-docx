@@ -505,6 +505,57 @@ describe("list inline formatting", () => {
   })
 })
 
+describe("nested code blocks in list items", () => {
+  const md = [
+    "1. item one",
+    "",
+    "2. item two",
+    "",
+    "   ```bash",
+    "   some-command",
+    "   ```",
+    "",
+    "3. item three",
+  ].join("\n")
+
+  test("list item text is present for all items", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain("item one")
+    expect(body).toContain("item two")
+    expect(body).toContain("item three")
+  })
+
+  test("fenced code block inside list item renders with CodeBlock style", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain('w:val="CodeBlock"')
+  })
+
+  test("fenced code block text is not stripped", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain("some-command")
+  })
+
+  test("plain (no lang) fenced code block inside list item renders CodeBlock style", async () => {
+    const plain = "1. item\n\n   ```\n   plain code\n   ```\n\n2. next"
+    const body = await bodyXml(plain)
+    expect(body).toContain('w:val="CodeBlock"')
+    expect(body).toContain("plain code")
+  })
+
+  test("highlighted fenced code block inside list item emits colored runs", async () => {
+    const highlighted = "1. item\n\n   ```typescript\n   const x = 1\n   ```\n\n2. next"
+    const body = await bodyXml(highlighted)
+    expect(body).toContain('w:val="D73A49"')
+  })
+
+  test("unordered list item with nested code block renders CodeBlock", async () => {
+    const bullet = "- item\n\n  ```\n  bullet-code\n  ```\n\n- next"
+    const body = await bodyXml(bullet)
+    expect(body).toContain('w:val="CodeBlock"')
+    expect(body).toContain("bullet-code")
+  })
+})
+
 describe("numbering level formats", () => {
   function orderedAbstractNum(numXml: string): string {
     const blocks = numXml.match(/<w:abstractNum\b[^>]*>[\s\S]*?<\/w:abstractNum>/g) ?? []
