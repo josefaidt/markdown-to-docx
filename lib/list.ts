@@ -128,7 +128,7 @@ export async function listItemsToParagraphs(
       elements.push(
         new Paragraph({
           children: [new TextRun({ size: 12 })],
-          spacing: { before: 0, after: 160, line: 160, lineRule: "exact" as const },
+          spacing: { before: 0, after: 0, line: 160, lineRule: "exact" as const },
         }),
       )
     }
