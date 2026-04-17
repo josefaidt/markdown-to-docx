@@ -237,14 +237,13 @@ describe("inline formatting", () => {
     expect(body).toContain("foo()")
   })
 
-  test("InlineCode style has no explicit color (inherits prose color) and is 1pt smaller than normal", async () => {
+  test("InlineCode style has no explicit color and no explicit size (inherits from parent)", async () => {
     const { zip } = await buildDocx("`foo`")
     const stylesXml = await zip.file("word/styles.xml")!.async("string")
     const inlineCodeChunk =
       stylesXml.split(/<w:style\s/).find((c) => c.includes('"InlineCode"')) ?? ""
     expect(inlineCodeChunk).not.toContain('w:val="555555"')
-    // base is 11pt (default); inlineCode is 10pt = 20 half-points
-    expect(inlineCodeChunk).toContain('w:val="20"')
+    expect(inlineCodeChunk).not.toContain("w:sz")
   })
 
   test("`code#with-hash` renders as a single InlineCode run — not split at #", async () => {
@@ -721,6 +720,63 @@ describe("font size scaling", () => {
   test("ListSpacing style is not present", async () => {
     const sizes = await styleSizes()
     expect(sizes.has("ListSpacing")).toBe(false)
+  })
+})
+
+describe("style invariants", () => {
+  let stylesXml: string
+
+  async function getStylesXml() {
+    if (!stylesXml) {
+      const { zip } = await buildDocx("# H1\n## H2\n### H3\n\nParagraph with `code`.")
+      stylesXml = await zip.file("word/styles.xml")!.async("string")
+    }
+    return stylesXml
+  }
+
+  function styleChunk(xml: string, styleId: string) {
+    return xml.split(/<w:style\s/).find((c) => c.includes(`"${styleId}"`)) ?? ""
+  }
+
+  function halfPoints(xml: string, styleId: string): number | undefined {
+    const chunk = styleChunk(xml, styleId)
+    const m = chunk.match(/<w:sz w:val="(\d+)"/)
+    return m ? parseInt(m[1]!, 10) : undefined
+  }
+
+  test("InlineCode has no explicit font size (inherits from parent paragraph)", async () => {
+    const xml = await getStylesXml()
+    expect(styleChunk(xml, "InlineCode")).not.toContain("w:sz")
+  })
+
+  test("InlineCode has no explicit color (inherits prose color)", async () => {
+    const xml = await getStylesXml()
+    expect(styleChunk(xml, "InlineCode")).not.toContain("<w:color")
+  })
+
+  test("Heading1 is larger than Heading2", async () => {
+    const xml = await getStylesXml()
+    expect(halfPoints(xml, "Heading1")!).toBeGreaterThan(halfPoints(xml, "Heading2")!)
+  })
+
+  test("Heading2 is larger than Heading3", async () => {
+    const xml = await getStylesXml()
+    expect(halfPoints(xml, "Heading2")!).toBeGreaterThan(halfPoints(xml, "Heading3")!)
+  })
+
+  test("Heading3 is larger than Normal", async () => {
+    const xml = await getStylesXml()
+    expect(halfPoints(xml, "Heading3")!).toBeGreaterThan(halfPoints(xml, "Normal")!)
+  })
+
+  test("CodeBlock matches Normal font size", async () => {
+    const xml = await getStylesXml()
+    expect(halfPoints(xml, "CodeBlock")).toBe(halfPoints(xml, "Normal"))
+  })
+
+  test("FooterText is always 20 half-points regardless of Normal size", async () => {
+    const xml = await getStylesXml()
+    expect(halfPoints(xml, "FooterText")).toBe(20)
   })
 })
 
