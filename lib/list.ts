@@ -1,5 +1,15 @@
 import type { Tokens } from "marked"
-import { Paragraph, TextRun, convertInchesToTwip } from "docx"
+import {
+  BorderStyle,
+  Paragraph,
+  ShadingType,
+  Table,
+  TableCell,
+  TableRow,
+  TextRun,
+  WidthType,
+  convertInchesToTwip,
+} from "docx"
 import { highlightCode, isSupportedLang } from "./highlight"
 import { inlineTokensToRuns } from "./inline"
 
@@ -13,29 +23,62 @@ export function listIndent(level: number) {
   return { left: textAt, hanging: textAt - bulletAt }
 }
 
-async function codeTokenToParagraphs(token: Tokens.Generic): Promise<Paragraph[]> {
+async function codeTokenToTable(token: Tokens.Generic, level: number): Promise<Table> {
   const codeText = (token["text"] as string | undefined) ?? ""
   const codeLang = token["lang"] as string | undefined
-  if (isSupportedLang(codeLang)) {
-    const lines = await highlightCode(codeText, codeLang)
-    return lines.map(
-      (lineTokens) =>
-        new Paragraph({
-          style: "CodeBlock",
-          children: lineTokens.map(
-            (t) =>
-              new TextRun({
-                text: t.text,
-                font: "Consolas",
-                color: t.color,
-                bold: t.bold || undefined,
-                italics: t.italic || undefined,
-              }),
-          ),
-        }),
-    )
-  }
-  return codeText.split("\n").map((line) => new Paragraph({ text: line, style: "CodeBlock" }))
+  const codeLines = isSupportedLang(codeLang)
+    ? (await highlightCode(codeText, codeLang)).map(
+        (lineTokens) =>
+          new Paragraph({
+            style: "CodeBlock",
+            children: lineTokens.map(
+              (t) =>
+                new TextRun({
+                  text: t.text,
+                  font: "Consolas",
+                  color: t.color,
+                  bold: t.bold || undefined,
+                  italics: t.italic || undefined,
+                }),
+            ),
+          }),
+      )
+    : codeText.split("\n").map((line) => new Paragraph({ text: line, style: "CodeBlock" }))
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    indent: { size: listIndent(level).left, type: WidthType.DXA },
+    borders: {
+      top: { style: BorderStyle.NONE, size: 0 },
+      bottom: { style: BorderStyle.NONE, size: 0 },
+      left: { style: BorderStyle.NONE, size: 0 },
+      right: { style: BorderStyle.NONE, size: 0 },
+      insideHorizontal: { style: BorderStyle.NONE, size: 0 },
+      insideVertical: { style: BorderStyle.NONE, size: 0 },
+    },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            children: codeLines,
+            shading: { type: ShadingType.CLEAR, color: "F6F8FA", fill: "F6F8FA" },
+            margins: {
+              top: convertInchesToTwip(0.1),
+              bottom: convertInchesToTwip(0.1),
+              left: convertInchesToTwip(0.15),
+              right: convertInchesToTwip(0.15),
+            },
+            borders: {
+              top: { style: BorderStyle.NONE, size: 0 },
+              bottom: { style: BorderStyle.NONE, size: 0 },
+              left: { style: BorderStyle.NONE, size: 0 },
+              right: { style: BorderStyle.NONE, size: 0 },
+            },
+          }),
+        ],
+      }),
+    ],
+  })
 }
 
 export async function listItemsToParagraphs(
@@ -43,8 +86,8 @@ export async function listItemsToParagraphs(
   ordered: boolean,
   level: number,
   orderedRef: string,
-): Promise<Paragraph[]> {
-  const paragraphs: Paragraph[] = []
+): Promise<Array<Paragraph | Table>> {
+  const elements: Array<Paragraph | Table> = []
 
   for (const item of items) {
     if (item["type"] !== "list_item") continue
@@ -67,7 +110,7 @@ export async function listItemsToParagraphs(
       (t) => (t["tokens"] as Tokens.Generic[] | undefined) ?? (t["text"] ? [t] : []),
     )
 
-    paragraphs.push(
+    elements.push(
       new Paragraph({
         style: "ListItem",
         children: inlineTokensToRuns(inlineTokens),
@@ -79,11 +122,11 @@ export async function listItemsToParagraphs(
     )
 
     for (const codeToken of codeTokens) {
-      paragraphs.push(...(await codeTokenToParagraphs(codeToken)))
+      elements.push(await codeTokenToTable(codeToken, level))
     }
 
     for (const nested of nestedLists) {
-      paragraphs.push(
+      elements.push(
         ...(await listItemsToParagraphs(
           (nested["items"] as Tokens.Generic[] | undefined) ?? [],
           (nested["ordered"] as boolean | undefined) ?? false,
@@ -94,5 +137,5 @@ export async function listItemsToParagraphs(
     }
   }
 
-  return paragraphs
+  return elements
 }
