@@ -537,6 +537,22 @@ describe("nested code blocks in list items", () => {
     expect(body).toContain("some-command")
   })
 
+  test("fenced code block inside list item has grey background shading", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain('w:fill="F6F8FA"')
+  })
+
+  test("fenced code block inside list item is indented to match list level", async () => {
+    const body = await bodyXml(md)
+    // level 0: LIST_TEXT_INDENT = convertInchesToTwip(0.45) = 648 twips
+    expect(body).toContain('w:w="648"')
+  })
+
+  test("spacer paragraph after nested code block has after: 160 spacing", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain('w:after="160"')
+  })
+
   test("plain (no lang) fenced code block inside list item renders CodeBlock style", async () => {
     const plain = "1. item\n\n   ```\n   plain code\n   ```\n\n2. next"
     const body = await bodyXml(plain)
