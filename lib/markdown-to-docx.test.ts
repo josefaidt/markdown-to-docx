@@ -548,9 +548,10 @@ describe("nested code blocks in list items", () => {
     expect(body).toContain('w:w="648"')
   })
 
-  test("spacer paragraph after nested code block has after: 160 spacing", async () => {
+  test("spacer paragraph after nested code block uses exact 160-twip line height", async () => {
     const body = await bodyXml(md)
-    expect(body).toContain('w:after="160"')
+    expect(body).toContain('w:lineRule="exact"')
+    expect(body).toContain('w:line="160"')
   })
 
   test("plain (no lang) fenced code block inside list item renders CodeBlock style", async () => {
