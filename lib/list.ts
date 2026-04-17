@@ -1,5 +1,6 @@
 import type { Tokens } from "marked"
-import { Paragraph, convertInchesToTwip } from "docx"
+import { Paragraph, TextRun, convertInchesToTwip } from "docx"
+import { highlightCode, isSupportedLang } from "./highlight"
 import { inlineTokensToRuns } from "./inline"
 
 const LIST_BULLET_INDENT = convertInchesToTwip(0.2)
@@ -12,12 +13,37 @@ export function listIndent(level: number) {
   return { left: textAt, hanging: textAt - bulletAt }
 }
 
-export function listItemsToParagraphs(
+async function codeTokenToParagraphs(token: Tokens.Generic): Promise<Paragraph[]> {
+  const codeText = (token["text"] as string | undefined) ?? ""
+  const codeLang = token["lang"] as string | undefined
+  if (isSupportedLang(codeLang)) {
+    const lines = await highlightCode(codeText, codeLang)
+    return lines.map(
+      (lineTokens) =>
+        new Paragraph({
+          style: "CodeBlock",
+          children: lineTokens.map(
+            (t) =>
+              new TextRun({
+                text: t.text,
+                font: "Consolas",
+                color: t.color,
+                bold: t.bold || undefined,
+                italics: t.italic || undefined,
+              }),
+          ),
+        }),
+    )
+  }
+  return codeText.split("\n").map((line) => new Paragraph({ text: line, style: "CodeBlock" }))
+}
+
+export async function listItemsToParagraphs(
   items: Tokens.Generic[],
   ordered: boolean,
   level: number,
   orderedRef: string,
-): Paragraph[] {
+): Promise<Paragraph[]> {
   const paragraphs: Paragraph[] = []
 
   for (const item of items) {
@@ -25,12 +51,15 @@ export function listItemsToParagraphs(
 
     const textTokens: Tokens.Generic[] = []
     const nestedLists: Tokens.Generic[] = []
+    const codeTokens: Tokens.Generic[] = []
 
     for (const t of (item["tokens"] as Tokens.Generic[] | undefined) ?? []) {
       if (t.type === "list") {
         nestedLists.push(t)
       } else if (t.type === "text" || t.type === "paragraph") {
         textTokens.push(t)
+      } else if (t.type === "code") {
+        codeTokens.push(t)
       }
     }
 
@@ -49,14 +78,18 @@ export function listItemsToParagraphs(
       }),
     )
 
+    for (const codeToken of codeTokens) {
+      paragraphs.push(...(await codeTokenToParagraphs(codeToken)))
+    }
+
     for (const nested of nestedLists) {
       paragraphs.push(
-        ...listItemsToParagraphs(
+        ...(await listItemsToParagraphs(
           (nested["items"] as Tokens.Generic[] | undefined) ?? [],
           (nested["ordered"] as boolean | undefined) ?? false,
           level + 1,
           orderedRef,
-        ),
+        )),
       )
     }
   }

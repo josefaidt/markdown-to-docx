@@ -147,12 +147,12 @@ async function tokensToDocx(
           orderedRefs.push(orderedRef)
         }
         elements.push(
-          ...listItemsToParagraphs(
+          ...(await listItemsToParagraphs(
             (token["items"] as Tokens.Generic[] | undefined) ?? [],
             ordered,
             0,
             orderedRef,
-          ),
+          )),
         )
         break
       }
