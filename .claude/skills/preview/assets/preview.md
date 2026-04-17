@@ -103,6 +103,29 @@ Back to a paragraph. Then an ordered list.
 
 Then another paragraph to close.
 
+## List Items with Nested Code Blocks (Issue #47)
+
+1. Install the dependency
+
+   ```bash
+   npm install some-package
+   ```
+
+2. Configure it in your project
+
+   ```typescript
+   import { configure } from "some-package"
+   configure({ option: true })
+   ```
+
+3. Run the build
+
+   ```bash
+   npm run build
+   ```
+
+4. Done
+
 ## List Separation (Issue #22)
 
 A bullet list followed by a blank line and then an ordered list — there should be visible space between them.
