@@ -17,6 +17,7 @@ interface FontSizes {
   heading4: number
   heading56: number
   codeBlock: number
+  inlineCode: number
   footerText: number
 }
 
@@ -30,6 +31,7 @@ function fontSizes(basePt: number): FontSizes {
     heading4: hp(basePt),
     heading56: hp(basePt),
     codeBlock: hp(basePt),
+    inlineCode: hp(basePt - 1),
     footerText: hp(10),
   }
 }
@@ -149,7 +151,7 @@ export function buildStyleOptions(
           name: "Inline Code",
           run: {
             font: "Consolas",
-            color: "555555",
+            size: sizes.inlineCode,
             shading: { type: ShadingType.CLEAR, color: "F2F2F2", fill: "F2F2F2" },
           },
         },
