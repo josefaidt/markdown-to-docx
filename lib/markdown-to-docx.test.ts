@@ -237,12 +237,14 @@ describe("inline formatting", () => {
     expect(body).toContain("foo()")
   })
 
-  test("InlineCode style has color 555555 to match code blocks", async () => {
+  test("InlineCode style has no explicit color (inherits prose color) and is 1pt smaller than normal", async () => {
     const { zip } = await buildDocx("`foo`")
     const stylesXml = await zip.file("word/styles.xml")!.async("string")
     const inlineCodeChunk =
       stylesXml.split(/<w:style\s/).find((c) => c.includes('"InlineCode"')) ?? ""
-    expect(inlineCodeChunk).toContain('w:val="555555"')
+    expect(inlineCodeChunk).not.toContain('w:val="555555"')
+    // base is 11pt (default); inlineCode is 10pt = 20 half-points
+    expect(inlineCodeChunk).toContain('w:val="20"')
   })
 
   test("`code#with-hash` renders as a single InlineCode run — not split at #", async () => {
