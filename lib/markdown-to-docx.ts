@@ -292,6 +292,9 @@ async function tokensToDocx(
         break
       }
 
+      case "html":
+        break
+
       case "space": {
         if (prevTokenType === "list" && nextTokenType === "list") {
           elements.push(
@@ -341,7 +344,7 @@ export async function convertMarkdownToDocx(
 ): Promise<Document> {
   const content = await Bun.file(markdownPath).text()
   const { body, data } = parseFrontmatter(content)
-  const tokens = marked.lexer(body) as Tokens.Generic[]
+  const tokens = marked.lexer(body.trimStart()) as Tokens.Generic[]
   const { elements, orderedRefs } = await tokensToDocx(tokens, markdownPath, options.bookmarks)
 
   // CLI flags take precedence; frontmatter.title is the fallback for headerLabel

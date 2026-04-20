@@ -146,6 +146,23 @@ describe("frontmatter", () => {
     const body = await bodyXml("# Hello")
     expect(body).toContain("Hello")
   })
+
+  test("HTML comment between frontmatter and first heading does not add an empty paragraph before the heading", async () => {
+    const md = "---\ntitle: A New Doc\n---\n\n<!-- internal comment -->\n\n# The First Heading"
+    const body = await bodyXml(md)
+    expect(body).not.toContain("internal comment")
+    // Only one <w:p element should exist — the heading itself (no preceding empty paragraph)
+    const paragraphs = body.match(/<w:p[ >]/g) ?? []
+    expect(paragraphs).toHaveLength(1)
+  })
+
+  test("HTML comment mid-document is silently ignored", async () => {
+    const md = "# Heading\n\n<!-- a comment -->\n\nSome text."
+    const body = await bodyXml(md)
+    expect(body).not.toContain("a comment")
+    expect(body).toContain("Heading")
+    expect(body).toContain("Some text.")
+  })
 })
 
 describe("headings", () => {
