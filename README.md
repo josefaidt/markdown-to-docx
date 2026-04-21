@@ -46,3 +46,7 @@ Install the `convert-markdown-to-docx` skill into your coding agent:
 ```sh
 bunx skills add josefaidt/markdown-to-docx
 ```
+
+## Known Limitations
+
+- **Footnote superscripts in Word Online / SharePoint**: The `FootnoteRef` character style used for raised footnote numbers renders correctly in the Word desktop app but is ignored by Word Online. Superscripts will appear as normal-sized inline text when viewed in a browser.
