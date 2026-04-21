@@ -18,8 +18,7 @@ interface FontSizes {
   heading56: number
   codeBlock: number
   footerText: number
-  footnote: number
-  footnoteRef: number
+  footnoteText: number
 }
 
 function fontSizes(basePt: number): FontSizes {
@@ -33,8 +32,7 @@ function fontSizes(basePt: number): FontSizes {
     heading56: hp(basePt),
     codeBlock: hp(basePt),
     footerText: hp(10),
-    footnote: hp(basePt - 2),
-    footnoteRef: hp(basePt - 4),
+    footnoteText: hp(basePt - 2),
   }
 }
 
@@ -142,11 +140,11 @@ export function buildStyleOptions(
           run: { size: sizes.footerText, color: "888888" },
         },
         {
-          id: "Footnote",
-          name: "Footnote",
+          id: "FootnoteText",
+          name: "footnote text",
           basedOn: "Normal",
-          run: { color: "888888" },
-          paragraph: { spacing: { before: 60, after: 60 } },
+          run: { size: sizes.footnoteText, color: "888888" },
+          paragraph: { spacing: { before: 60, after: 60, line: 240 } },
         },
       ],
       characterStyles: [
@@ -165,8 +163,8 @@ export function buildStyleOptions(
         },
         {
           id: "FootnoteRef",
-          name: "Footnote Reference",
-          run: { size: sizes.footnoteRef, position: 8 },
+          name: "Footnote Ref",
+          run: { size: sizes.footnoteText, position: 6 },
         },
         {
           id: "Hyperlink",

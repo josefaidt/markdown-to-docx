@@ -288,7 +288,7 @@ async function tokensToDocx(
         const inlineTokens = (token["tokens"] as Tokens.Generic[] | undefined) ?? []
         elements.push(
           new Paragraph({
-            style: "Footnote",
+            style: "FootnoteText",
             children: [
               new TextRun({ text: `${label ?? ""}`, style: "FootnoteRef" }),
               new TextRun({ text: " " }),

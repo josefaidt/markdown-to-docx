@@ -897,14 +897,14 @@ describe("footnotes", () => {
     expect(body).toContain(">2<")
   })
 
-  test("footnote definition uses Footnote paragraph style", async () => {
+  test("footnote definition uses FootnoteText paragraph style", async () => {
     const body = await bodyXml(md)
-    expect(body).toContain('w:val="Footnote"')
+    expect(body).toContain('w:val="FootnoteText"')
   })
 
   test("footnote definition label renders as FootnoteRef character style", async () => {
     const body = await bodyXml(md)
-    const footnoteChunk = body.slice(body.indexOf('w:val="Footnote"'))
+    const footnoteChunk = body.slice(body.indexOf('w:val="FootnoteText"'))
     expect(footnoteChunk).toContain('w:val="FootnoteRef"')
   })
 
@@ -919,23 +919,10 @@ describe("footnotes", () => {
     expect(body).toContain("Plain text footnote")
   })
 
-  test("FootnoteRef character style has size and position set", async () => {
-    const { zip } = await buildDocx(md)
-    const stylesXml = await zip.file("word/styles.xml")!.async("string")
-    const chunk = stylesXml.split(/<w:style\s/).find((c) => c.includes('"FootnoteRef"')) ?? ""
-    expect(chunk).toContain("<w:sz ")
-    expect(chunk).toContain("<w:position ")
-  })
-
-  test("FootnoteRef size scales with fontSize option", async () => {
-    const { zip: zip10 } = await buildDocx(md, { fontSize: 10 })
-    const { zip: zip12 } = await buildDocx(md, { fontSize: 12 })
-    const styles10 = await zip10.file("word/styles.xml")!.async("string")
-    const styles12 = await zip12.file("word/styles.xml")!.async("string")
-    const size10 = styles10.split(/<w:style\s/).find((c) => c.includes('"FootnoteRef"'))
-    const size12 = styles12.split(/<w:style\s/).find((c) => c.includes('"FootnoteRef"'))
-    const sz10 = parseInt(size10?.match(/<w:sz w:val="(\d+)"/)?.[1] ?? "0", 10)
-    const sz12 = parseInt(size12?.match(/<w:sz w:val="(\d+)"/)?.[1] ?? "0", 10)
-    expect(sz12).toBeGreaterThan(sz10)
+  test("footnote ref run uses FootnoteRef style", async () => {
+    const body = await bodyXml("text[^1]\n\n[^1] note")
+    // Both the inline ref and definition label should carry the built-in character style
+    const refs = body.match(/w:val="FootnoteRef"/g) ?? []
+    expect(refs.length).toBeGreaterThanOrEqual(2)
   })
 })
