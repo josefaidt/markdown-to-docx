@@ -193,3 +193,13 @@ A standalone block image:
 ![Goofy Llama](./goofy-llama.jpg)
 
 An image inline with text: here is the llama ![Goofy Llama](./goofy-llama.jpg) mid-sentence.
+
+## Footnotes (Issue #53)
+
+This is some text with a citation.[^1] This is another sentence.[^2] And here is a third reference.[^3]
+
+[^1] [Some Link to Another Article](https://example.com)
+
+[^2] [Another Article Link](https://example.com)
+
+[^3] Plain text footnote without a hyperlink, just to verify mixed content renders correctly.

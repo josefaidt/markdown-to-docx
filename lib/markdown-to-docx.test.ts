@@ -802,3 +802,66 @@ describe("header", () => {
     expect(header).not.toContain("FM Title")
   })
 })
+
+describe("footnotes", () => {
+  const md = [
+    "Some text with a citation.[^1] Another sentence.[^2]",
+    "",
+    "[^1] [Some Link](https://example.com)",
+    "",
+    "[^2] Plain text footnote",
+  ].join("\n")
+
+  test("footnote ref in prose renders as FootnoteRef character style", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain('w:val="FootnoteRef"')
+  })
+
+  test("footnote ref renders the label number as text", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain(">1<")
+    expect(body).toContain(">2<")
+  })
+
+  test("footnote definition uses Footnote paragraph style", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain('w:val="Footnote"')
+  })
+
+  test("footnote definition label renders as FootnoteRef character style", async () => {
+    const body = await bodyXml(md)
+    const footnoteChunk = body.slice(body.indexOf('w:val="Footnote"'))
+    expect(footnoteChunk).toContain('w:val="FootnoteRef"')
+  })
+
+  test("footnote definition with hyperlink renders as hyperlink", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain("<w:hyperlink")
+    expect(body).toContain("Some Link")
+  })
+
+  test("footnote definition plain text renders the text", async () => {
+    const body = await bodyXml(md)
+    expect(body).toContain("Plain text footnote")
+  })
+
+  test("FootnoteRef character style has size and position set", async () => {
+    const { zip } = await buildDocx(md)
+    const stylesXml = await zip.file("word/styles.xml")!.async("string")
+    const chunk = stylesXml.split(/<w:style\s/).find((c) => c.includes('"FootnoteRef"')) ?? ""
+    expect(chunk).toContain("<w:sz ")
+    expect(chunk).toContain("<w:position ")
+  })
+
+  test("FootnoteRef size scales with fontSize option", async () => {
+    const { zip: zip10 } = await buildDocx(md, { fontSize: 10 })
+    const { zip: zip12 } = await buildDocx(md, { fontSize: 12 })
+    const styles10 = await zip10.file("word/styles.xml")!.async("string")
+    const styles12 = await zip12.file("word/styles.xml")!.async("string")
+    const size10 = styles10.split(/<w:style\s/).find((c) => c.includes('"FootnoteRef"'))
+    const size12 = styles12.split(/<w:style\s/).find((c) => c.includes('"FootnoteRef"'))
+    const sz10 = parseInt(size10?.match(/<w:sz w:val="(\d+)"/)?.[1] ?? "0", 10)
+    const sz12 = parseInt(size12?.match(/<w:sz w:val="(\d+)"/)?.[1] ?? "0", 10)
+    expect(sz12).toBeGreaterThan(sz10)
+  })
+})

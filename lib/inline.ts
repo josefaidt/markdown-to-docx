@@ -113,6 +113,11 @@ export function inlineTokensToRuns(
         }
         break
       }
+      case "footnote_ref": {
+        const label = token["label"] as string | undefined
+        runs.push(new TextRun({ text: label ?? "", style: "FootnoteRef", ...ctx }))
+        break
+      }
       case "br":
         runs.push(new TextRun({ break: 1 }))
         break

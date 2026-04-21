@@ -23,12 +23,15 @@ import {
 } from "docx"
 import { marked } from "marked"
 import { buildNumbering, buildStyleOptions } from "./document-styles"
+import { footnote } from "./footnote"
 import { parseFrontmatter } from "./frontmatter"
 import { highlightCode, isSupportedLang } from "./highlight"
 import { loadImage } from "./image"
 import { headingSlug, inlineTokensToRuns } from "./inline"
 import { listItemsToParagraphs } from "./list"
 import { buildTable } from "./table"
+
+marked.use(footnote)
 
 const HEADING_STYLES: Record<number, string> = {
   1: "Heading1",
@@ -277,6 +280,22 @@ async function tokensToDocx(
             }),
           )
         }
+        break
+      }
+
+      case "footnote_def": {
+        const label = token["label"] as string | undefined
+        const inlineTokens = (token["tokens"] as Tokens.Generic[] | undefined) ?? []
+        elements.push(
+          new Paragraph({
+            style: "Footnote",
+            children: [
+              new TextRun({ text: `${label ?? ""}`, style: "FootnoteRef" }),
+              new TextRun({ text: " " }),
+              ...inlineTokensToRuns(inlineTokens),
+            ],
+          }),
+        )
         break
       }
 
