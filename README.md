@@ -51,6 +51,6 @@ bunx skills add josefaidt/markdown-to-docx
 
 The following features render correctly in the Word desktop app but behave differently in Word Online (SharePoint):
 
-- **Footnote superscripts**: The raised superscript style on footnote reference numbers is ignored by Word Online — numbers appear inline at normal size.
+- **Footnote text size**: The `FootnoteText` paragraph style is not recognized by Word Online, so footnote body text renders at full paragraph size rather than the intended smaller size.
 - **Footer page numbers**: The right-aligned tab stop used to position page numbers in the footer is not honored by Word Online, so the page number does not align to the right margin.
 - **Line number styles**: Word Online always renders line numbers in Times New Roman regardless of the font set in the `lineNumber` character style.
