@@ -1,6 +1,17 @@
 import type { Tokens } from "marked"
-import { AlignmentType, ImportedXmlComponent, Paragraph, Table, TableCell, TableRow } from "docx"
+import {
+  AlignmentType,
+  ImportedXmlComponent,
+  Paragraph,
+  Table,
+  TableCell,
+  TableRow,
+  WidthType,
+} from "docx"
 import { inlineTokensToRuns } from "./inline"
+
+// A4 page width (11906 twips) minus 0.75" left + 0.75" right margins = 9746 twips text width
+const TEXT_WIDTH_TWIP = 9746
 
 interface ParsedTableCell {
   text: string
@@ -11,6 +22,10 @@ interface ParsedTableCell {
 
 export function buildTable(token: Tokens.Generic): Table {
   const rows: TableRow[] = []
+
+  const header = token["header"] as ParsedTableCell[] | undefined
+  const colCount = Math.max(header?.length ?? 1, 1)
+  const colWidthTwip = Math.floor(TEXT_WIDTH_TWIP / colCount)
 
   const cellParagraph = (cell: ParsedTableCell, bold = false) =>
     new Paragraph({
@@ -23,9 +38,9 @@ export function buildTable(token: Tokens.Generic): Table {
   const tableCell = (cell: ParsedTableCell, bold = false) =>
     new TableCell({
       children: [cellParagraph(cell, bold)],
+      width: { size: colWidthTwip, type: WidthType.DXA },
     })
 
-  const header = token["header"] as ParsedTableCell[] | undefined
   if (header && header.length > 0) {
     rows.push(
       new TableRow({
@@ -43,13 +58,17 @@ export function buildTable(token: Tokens.Generic): Table {
     )
   }
 
+  const columnWidths = Array.from({ length: colCount }, () => colWidthTwip)
+
   const table = new Table({
     rows,
     style: "TableGridLight",
+    columnWidths,
   })
   // The docx library mis-serializes WidthType.PERCENTAGE as e.g. "5000%" and always
   // emits tblBorders even when a named style owns them. Patch the TableProperties root
-  // directly to replace the broken width element and strip the redundant borders.
+  // directly to replace the broken width element, strip the redundant borders, and add
+  // fixed layout so Word respects the declared column widths instead of auto-sizing.
   const tblPr = (table as unknown as { root: { root: unknown[] }[] }).root[0]
   tblPr.root = tblPr.root.filter((el) => {
     const name = (el as { rootKey?: string }).rootKey
@@ -60,6 +79,12 @@ export function buildTable(token: Tokens.Generic): Table {
       root: unknown[]
     }
   ).root[0]
+  const tblLayout = (
+    ImportedXmlComponent.fromXmlString('<w:tblLayout w:type="fixed"/>') as unknown as {
+      root: unknown[]
+    }
+  ).root[0]
   tblPr.root.push(tblW)
+  tblPr.root.push(tblLayout)
   return table
 }
