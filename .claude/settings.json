@@ -26,6 +26,7 @@
       "Bash(gh workflow view *)",
       "Bash(gh workflow list *)",
 
+      "Bash(git fetch origin)",
       "Bash(git push -u origin worktree-*)",
 
       "Bash(bun run bin/markdown-to-docx.ts *)",
@@ -35,7 +36,10 @@
 
       "Edit(lib/**/*)",
       "Edit(bin/**/*)",
-      "Edit(scripts/**/*)"
+      "Edit(scripts/**/*)",
+
+      "Skill(preview)",
+      "Edit(.claude/skills/preview/assets/preview.md)"
     ]
   },
   "hooks": {
