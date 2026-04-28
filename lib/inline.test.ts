@@ -73,6 +73,46 @@ describe("inlineTokensToRuns", () => {
     expect(serialized).toContain("w:b")
   })
 
+  test("~~*italic strike*~~ — nested em inside del → italic + strike", () => {
+    const runs = parseInline("~~*italic strike*~~")
+    expect(runs).toHaveLength(1)
+    const serialized = JSON.stringify(runs[0])
+    expect(serialized).toContain("w:strike")
+    expect(serialized).toContain("w:i")
+  })
+
+  test("*~~italic strike~~* — del inside em → italic + strike", () => {
+    const runs = parseInline("*~~italic strike~~*")
+    expect(runs).toHaveLength(1)
+    const serialized = JSON.stringify(runs[0])
+    expect(serialized).toContain("w:strike")
+    expect(serialized).toContain("w:i")
+  })
+
+  test("~~`code strike`~~ — codespan inside del → strike flag carries through", () => {
+    const runs = parseInline("~~`code strike`~~")
+    expect(runs).toHaveLength(1)
+    expect(runs[0]).toBeInstanceOf(TextRun)
+    const serialized = JSON.stringify(runs[0])
+    expect(serialized).toContain("w:strike")
+  })
+
+  test("`~~not strike~~` — tildes inside codespan are literal (no formatting)", () => {
+    const runs = parseInline("`~~not strike~~`")
+    expect(runs).toHaveLength(1)
+    const wt = (runs[0] as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("~~not strike~~")
+  })
+
+  test("***~~all three~~*** — bold + italic + strike compose", () => {
+    const runs = parseInline("***~~all three~~***")
+    expect(runs).toHaveLength(1)
+    const serialized = JSON.stringify(runs[0])
+    expect(serialized).toContain("w:strike")
+    expect(serialized).toContain("w:b")
+    expect(serialized).toContain("w:i")
+  })
+
   test("[**bold**](url) — nested strong in link → ExternalHyperlink", () => {
     const runs = parseInline("[**bold link**](https://example.com)")
     expect(runs).toHaveLength(1)
