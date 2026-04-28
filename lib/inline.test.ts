@@ -53,6 +53,26 @@ describe("inlineTokensToRuns", () => {
     expect(runs.every((r) => r instanceof TextRun)).toBe(true)
   })
 
+  test("~~strike~~ → single TextRun with strike=true", () => {
+    const runs = parseInline("~~strike~~")
+    expect(runs).toHaveLength(1)
+    expect(runs[0]).toBeInstanceOf(TextRun)
+    const strike = (runs[0] as any).root.find(
+      (n: any) => n && typeof n === "object" && "root" in n && n.rootKey === "w:rPr",
+    )
+    const hasStrike = JSON.stringify(strike).includes("w:strike")
+    expect(hasStrike).toBe(true)
+  })
+
+  test("~~**bold strike**~~ — nested strong inside del → single TextRun with bold + strike", () => {
+    const runs = parseInline("~~**bold strike**~~")
+    expect(runs).toHaveLength(1)
+    expect(runs[0]).toBeInstanceOf(TextRun)
+    const serialized = JSON.stringify(runs[0])
+    expect(serialized).toContain("w:strike")
+    expect(serialized).toContain("w:b")
+  })
+
   test("[**bold**](url) — nested strong in link → ExternalHyperlink", () => {
     const runs = parseInline("[**bold link**](https://example.com)")
     expect(runs).toHaveLength(1)
