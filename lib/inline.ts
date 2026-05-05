@@ -7,6 +7,7 @@ export type InlineChild = TextRun | ExternalHyperlink | InternalHyperlink | Imag
 interface InlineCtx {
   bold?: boolean
   italics?: boolean
+  strike?: boolean
   useTemplate?: boolean
 }
 
@@ -58,6 +59,11 @@ export function inlineTokensToRuns(
       case "em":
         runs.push(
           ...inlineTokensToRuns(children ?? [], { ...ctx, italics: true }, images, useTemplate),
+        )
+        break
+      case "del":
+        runs.push(
+          ...inlineTokensToRuns(children ?? [], { ...ctx, strike: true }, images, useTemplate),
         )
         break
       case "codespan":
