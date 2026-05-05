@@ -521,6 +521,73 @@ describe("list inline formatting", () => {
     expect(body).toContain('w:val="InlineCode"')
     expect(body).toContain("foo()")
   })
+
+  // Regression tests for https://github.com/josefaidt/markdown-to-docx/issues/63
+  // The reported bug: inline code adjacent to other decorations in a list item was skipped.
+  // Inline code inside a link is covered separately because the link handler flattens children.
+  test("`code` + **bold** + `code` in one list item → both codespans survive", async () => {
+    const body = await bodyXml(
+      "- this is some `inline code` but only after this **bolded** text do `inline code` blocks actually render correctly",
+    )
+    const codespans = body.match(/<w:rStyle w:val="InlineCode"\/>/g) ?? []
+    expect(codespans).toHaveLength(2)
+    expect(body).toContain("<w:b/>")
+    expect(body).toContain("this is some")
+    expect(body).toContain("bolded")
+    expect(body).toContain("blocks actually render correctly")
+  })
+
+  test("`code` + *italic* + `code` in one list item → both codespans survive", async () => {
+    const body = await bodyXml("- pre `one` mid *emph* post `two` end")
+    const codespans = body.match(/<w:rStyle w:val="InlineCode"\/>/g) ?? []
+    expect(codespans).toHaveLength(2)
+    expect(body).toContain("<w:i/>")
+  })
+
+  test("codespan adjacent to **bold** with no separating space still renders", async () => {
+    const body = await bodyXml("- lead**bold**`code`tail")
+    const codespans = body.match(/<w:rStyle w:val="InlineCode"\/>/g) ?? []
+    expect(codespans).toHaveLength(1)
+    expect(body).toContain("<w:b/>")
+    expect(body).toContain("bold")
+    expect(body).toContain("code")
+  })
+
+  test("**bold** then `code` then *italic* then `code` — decoration chain around codespans", async () => {
+    const body = await bodyXml("- **b** `c1` *i* `c2` end")
+    const codespans = body.match(/<w:rStyle w:val="InlineCode"\/>/g) ?? []
+    expect(codespans).toHaveLength(2)
+    expect(body).toContain("<w:b/>")
+    expect(body).toContain("<w:i/>")
+  })
+
+  test("codespan inside **nested strong** alongside a sibling codespan — both render", async () => {
+    const body = await bodyXml("- **bold `inner`** then `outer`")
+    const codespans = body.match(/<w:rStyle w:val="InlineCode"\/>/g) ?? []
+    expect(codespans).toHaveLength(2)
+    expect(body).toContain("<w:b/>")
+  })
+
+  test("ordered list: `code` + **bold** + `code` → both codespans survive", async () => {
+    const body = await bodyXml("1. pre `one` mid **bold** post `two` end")
+    const codespans = body.match(/<w:rStyle w:val="InlineCode"\/>/g) ?? []
+    expect(codespans).toHaveLength(2)
+    expect(body).toContain("<w:b/>")
+  })
+
+  test("nested list item: `code` + **bold** + `code` → both codespans survive", async () => {
+    const body = await bodyXml("- parent\n  - pre `one` mid **bold** post `two` end")
+    const codespans = body.match(/<w:rStyle w:val="InlineCode"\/>/g) ?? []
+    expect(codespans).toHaveLength(2)
+    expect(body).toContain("<w:b/>")
+  })
+
+  test("loose list item (blank line between items): codespans + **bold** all render", async () => {
+    const body = await bodyXml("- first\n\n- pre `one` mid **bold** post `two` end")
+    const codespans = body.match(/<w:rStyle w:val="InlineCode"\/>/g) ?? []
+    expect(codespans).toHaveLength(2)
+    expect(body).toContain("<w:b/>")
+  })
 })
 
 describe("nested code blocks in list items", () => {
