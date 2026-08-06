@@ -145,6 +145,55 @@ describe("inlineTokensToRuns", () => {
     expect(wt.root[1]).toBe("foo \u2014 bar")
   })
 
+  test("&nbsp; is decoded to non-breaking space (U+00A0)", () => {
+    const runs = parseInline("hello&nbsp;world")
+    expect(runs).toHaveLength(1)
+    const wt = (runs[0] as TextRun as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("hello world")
+  })
+
+  test("multiple &nbsp; entities are all decoded", () => {
+    const runs = parseInline("a&nbsp;&nbsp;b")
+    expect(runs).toHaveLength(1)
+    const wt = (runs[0] as TextRun as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("a  b")
+  })
+
+  test("&#160; numeric entity is decoded to non-breaking space", () => {
+    const runs = parseInline("foo&#160;bar")
+    expect(runs).toHaveLength(1)
+    const wt = (runs[0] as TextRun as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("foo bar")
+  })
+
+  test("&#xA0; hex entity is decoded to non-breaking space", () => {
+    const runs = parseInline("foo&#xA0;bar")
+    expect(runs).toHaveLength(1)
+    const wt = (runs[0] as TextRun as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("foo bar")
+  })
+
+  test("&amp; is decoded to ampersand", () => {
+    const runs = parseInline("Tom&amp;Jerry")
+    expect(runs).toHaveLength(1)
+    const wt = (runs[0] as TextRun as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("Tom&Jerry")
+  })
+
+  test("&lt; and &gt; are decoded to angle brackets", () => {
+    const runs = parseInline("&lt;div&gt;")
+    expect(runs).toHaveLength(1)
+    const wt = (runs[0] as TextRun as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("<div>")
+  })
+
+  test("unknown entities are left as-is", () => {
+    const runs = parseInline("&fakething;")
+    expect(runs).toHaveLength(1)
+    const wt = (runs[0] as TextRun as any).root.find((n: any) => n.rootKey === "w:t")
+    expect(wt.root[1]).toBe("&fakething;")
+  })
+
   test("empty token list → empty array", () => {
     expect(inlineTokensToRuns([])).toHaveLength(0)
   })

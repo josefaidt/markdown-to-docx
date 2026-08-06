@@ -11,8 +11,44 @@ interface InlineCtx {
   useTemplate?: boolean
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+  nbsp: "\u00a0",
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  copy: "\u00a9",
+  reg: "\u00ae",
+  trade: "\u2122",
+  mdash: "\u2014",
+  ndash: "\u2013",
+  hellip: "\u2026",
+  laquo: "\u00ab",
+  raquo: "\u00bb",
+  lsquo: "\u2018",
+  rsquo: "\u2019",
+  ldquo: "\u201c",
+  rdquo: "\u201d",
+  bull: "\u2022",
+}
+
+function decodeHtmlEntities(text: string): string {
+  return text.replace(/&(#x?[0-9a-fA-F]+|\w+);/g, (match, entity: string) => {
+    if (entity.startsWith("#x") || entity.startsWith("#X")) {
+      const code = parseInt(entity.slice(2), 16)
+      return isNaN(code) ? match : String.fromCodePoint(code)
+    }
+    if (entity.startsWith("#")) {
+      const code = parseInt(entity.slice(1), 10)
+      return isNaN(code) ? match : String.fromCodePoint(code)
+    }
+    return NAMED_ENTITIES[entity] ?? match
+  })
+}
+
 function applyTypography(text: string): string {
-  return text.replace(/--/g, "\u2014")
+  return decodeHtmlEntities(text).replace(/--/g, "\u2014")
 }
 
 // Word silently truncates bookmark names to 40 characters, so we enforce the
