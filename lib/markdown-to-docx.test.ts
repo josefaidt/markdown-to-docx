@@ -461,10 +461,28 @@ describe("tables", () => {
     expect(body).toContain("bar")
   })
 
-  test("table uses full-width percentage layout", async () => {
+  test("table is full-width and autofit so it inherits the page width", async () => {
     const body = await bodyXml("| A |\n|---|\n| x |")
+    // Percentage width + autofit lets Word distribute columns to fill whatever
+    // page size and margins are in effect, rather than a hardcoded width.
     expect(body).toContain('w:type="pct"')
-    expect(body).toContain('w:w="5000"')
+    expect(body).toContain('<w:tblLayout w:type="autofit"/>')
+  })
+
+  test("table grid columns are non-degenerate and track content", async () => {
+    const body = await bodyXml(
+      "| # | Condition | Response |\n| :-- | :-- | :-- |\n| 1 | a running deployment | passes through |",
+    )
+    const grid = body.match(/<w:tblGrid>(.*?)<\/w:tblGrid>/s)?.[1] ?? ""
+    const cols = [...grid.matchAll(/<w:gridCol w:w="(\d+)"\/>/g)].map((m) => Number(m[1]))
+    expect(cols).toHaveLength(3)
+    // No degenerate placeholder widths (the old bug emitted identical 100-twip
+    // columns that Word Online could not reconcile with the declared width).
+    expect(cols.every((w) => w > 0)).toBe(true)
+    expect(new Set(cols).size).toBeGreaterThan(1)
+    // The content-heavy columns start wider than the "#" column.
+    expect(cols[1]!).toBeGreaterThan(cols[0]!)
+    expect(cols[2]!).toBeGreaterThan(cols[0]!)
   })
 })
 
