@@ -33,6 +33,12 @@ Global Options:
 
 ## Install
 
+### Homebrew
+
+```sh
+brew install josefaidt/tap/markdown-to-docx
+```
+
 ### Prebuilt binary
 
 ```sh
