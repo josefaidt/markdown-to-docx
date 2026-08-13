@@ -10,6 +10,7 @@ import {
   ImageRun,
   LineNumberRestartFormat,
   PageNumber,
+  PageOrientation,
   Paragraph,
   ShadingType,
   Tab,
@@ -354,6 +355,8 @@ export interface ConvertOptions {
   fontSize?: number
   /** Enable automatic bookmark generation for headings */
   bookmarks?: boolean
+  /** Render the page in landscape orientation instead of portrait */
+  landscape?: boolean
 }
 
 export async function convertMarkdownToDocx(
@@ -398,8 +401,9 @@ export async function convertMarkdownToDocx(
     footerChildren.push(new TextRun({ children: [new Tab()] }))
     footerChildren.push(new TextRun({ children: [PageNumber.CURRENT] }))
   }
-  // A4 default (11906 twips wide) minus 0.75" left + 0.75" right margins (Moderate) = 9826 twips text width
-  const textWidthTwip = 11906 - 1080 - 1080
+  // A4 default (11906 twips wide, 16838 twips tall) minus 0.75" left + 0.75" right margins (Moderate)
+  const pageWidthTwip = options.landscape ? 16838 : 11906
+  const textWidthTwip = pageWidthTwip - 1080 - 1080
   const footer = new Footer({
     children: [
       new Paragraph({
@@ -423,6 +427,7 @@ export async function convertMarkdownToDocx(
             ? { lineNumbers: { countBy: 1, restart: LineNumberRestartFormat.CONTINUOUS } }
             : {}),
           page: {
+            ...(options.landscape ? { size: { orientation: PageOrientation.LANDSCAPE } } : {}),
             margin: {
               top: convertInchesToTwip(1),
               bottom: convertInchesToTwip(1),

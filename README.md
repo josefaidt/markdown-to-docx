@@ -20,6 +20,7 @@ Options:
   --footer <text>    Text to display in the bottom-left footer
   --header <text>    Text to display left-aligned in the header (skipped on the first page)
   --bookmarks        Enable automatic bookmark generation for headings
+  --landscape        Render the page in landscape orientation
   --line-numbers     Enable Word's built-in document line numbering
   --page-numbers     Add a right-aligned page number to the footer
   --template <path>  Path to a .dotx template file to load styles from

@@ -733,6 +733,32 @@ describe("line numbers", () => {
   })
 })
 
+describe("landscape orientation", () => {
+  test("landscape: true sets w:orient to landscape", async () => {
+    const { zip } = await buildDocx("# Hello", { landscape: true })
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('w:orient="landscape"')
+  })
+
+  test("landscape: true swaps page width/height so width is the longer dimension", async () => {
+    const { zip } = await buildDocx("# Hello", { landscape: true })
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('<w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/>')
+  })
+
+  test("landscape not set produces portrait dimensions", async () => {
+    const { zip } = await buildDocx("# Hello")
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/>')
+  })
+
+  test("landscape: true widens the footer's right-aligned tab stop to match the wider page", async () => {
+    const { xml } = await buildDocx("# Hello", { footerLabel: "My Label", landscape: true })
+    const footer = await xml("word/footer1.xml")
+    expect(footer).toContain('w:pos="14678"')
+  })
+})
+
 describe("horizontal rule", () => {
   test("--- renders a paragraph with a bottom border", async () => {
     const body = await bodyXml("text\n\n---\n\nmore")
