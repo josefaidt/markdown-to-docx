@@ -31,7 +31,7 @@ import { highlightCode, isSupportedLang } from "./highlight"
 import { MAX_IMAGE_WIDTH_PX, loadImage } from "./image"
 import { headingSlug, inlineTokensToRuns } from "./inline"
 import { listItemsToParagraphs } from "./list"
-import { DEFAULT_PAGE_SIZE, parsePageSize } from "./page-size"
+import { DEFAULT_PAGE_SIZE, parsePageSize, toLandscape } from "./page-size"
 import { buildTable } from "./table"
 
 marked.use(footnote)
@@ -372,6 +372,8 @@ export interface ConvertOptions {
    * (default: A4)
    */
   pageSize?: PageSize | string
+  /** Turn the page on its side, so the longer edge of `pageSize` runs horizontally */
+  landscape?: boolean
 }
 
 /** Moderate margins — the text column is the page width less the left and right margin */
@@ -394,10 +396,13 @@ export async function convertMarkdownToDocx(
   const { body, data } = parseFrontmatter(content)
   const tokens = marked.lexer(body.trimStart()) as Tokens.Generic[]
 
-  const pageSize =
+  const requestedSize =
     typeof options.pageSize === "string"
       ? parsePageSize(options.pageSize)
       : (options.pageSize ?? DEFAULT_PAGE_SIZE)
+  // A size that is already wider than it is tall is landscape on its own, so
+  // the flag only ever turns a portrait page on its side — never back again
+  const pageSize = options.landscape ? toLandscape(requestedSize) : requestedSize
   const textWidthTwip = pageSize.width - PAGE_MARGIN.left - PAGE_MARGIN.right
 
   const { elements, orderedRefs } = await tokensToDocx(tokens, markdownPath, {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { DEFAULT_PAGE_SIZE, PAGE_SIZE_NAMES, parsePageSize } from "./page-size"
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_NAMES, parsePageSize, toLandscape } from "./page-size"
 
 describe("parsePageSize named sizes", () => {
   test("resolves letter", () => {
@@ -80,6 +80,25 @@ describe("parsePageSize custom sizes", () => {
 
   test("accepts fractional dimensions", () => {
     expect(parsePageSize("8.5x11")).toEqual(parsePageSize("letter"))
+  })
+})
+
+describe("toLandscape", () => {
+  test("swaps a portrait size", () => {
+    expect(toLandscape(parsePageSize("a4"))).toEqual({ width: 16838, height: 11906 })
+  })
+
+  test("leaves a size that is already wider than tall alone", () => {
+    expect(toLandscape(parsePageSize("11x8.5"))).toEqual(parsePageSize("11x8.5"))
+  })
+
+  test("is idempotent", () => {
+    const once = toLandscape(parsePageSize("legal"))
+    expect(toLandscape(once)).toEqual(once)
+  })
+
+  test("leaves a square size alone", () => {
+    expect(toLandscape(parsePageSize("9x9"))).toEqual(parsePageSize("9x9"))
   })
 })
 

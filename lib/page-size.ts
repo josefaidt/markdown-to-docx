@@ -38,6 +38,17 @@ const CUSTOM_SIZE_PATTERN =
 
 export const DEFAULT_PAGE_SIZE: PageSize = NAMED_SIZES["a4"]!
 
+/**
+ * Turn a page on its side, so its longer edge runs horizontally. Idempotent:
+ * a size that is already wider than it is tall comes back unchanged.
+ */
+export function toLandscape(size: PageSize): PageSize {
+  return {
+    width: Math.max(size.width, size.height),
+    height: Math.min(size.width, size.height),
+  }
+}
+
 function toTwips(value: string, unit: string | undefined, label: string, spec: string): number {
   const perUnit = TWIPS_PER_UNIT[(unit ?? "in").toLowerCase()]!
   const twips = Math.round(Number(value) * perUnit)

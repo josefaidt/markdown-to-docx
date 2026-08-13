@@ -19,8 +19,9 @@ Options:
   --font-size <n>    Base font size in pt; all styles scale from this (default: 12)
   --footer <text>    Text to display in the bottom-left footer
   --header <text>    Text to display left-aligned in the header (skipped on the first page)
-  --size <size>      Page size, named or custom (default: a4)
+  --page-size <size> Page size, named or custom (default: a4)
   --bookmarks        Enable automatic bookmark generation for headings
+  --landscape        Turn the page on its side, so its longer edge runs horizontally
   --line-numbers     Enable Word's built-in document line numbering
   --page-numbers     Add a right-aligned page number to the footer
   --template <path>  Path to a .dotx template file to load styles from
@@ -28,7 +29,7 @@ Options:
 Page Sizes:
   Named             ${PAGE_SIZE_NAMES.join(", ")}
   Custom            <width>x<height> with an optional unit: in (default), mm, cm, pt
-                    e.g. --size 9x12, --size 9x12in, --size 210x297mm
+                    e.g. --page-size 9x12, --page-size 9x12in, --page-size 210x297mm
 
 Global Options:
   -h, --help         Show this help message
@@ -112,13 +113,13 @@ function parseArgs(args: string[]): {
     filteredArgs.splice(fontSizeIdx, 2)
   }
 
-  // Extract --size <size>
+  // Extract --page-size <size>
   let pageSize: PageSize | undefined
-  const sizeIdx = filteredArgs.indexOf("--size")
+  const sizeIdx = filteredArgs.indexOf("--page-size")
   if (sizeIdx !== -1) {
     const sizeArg = filteredArgs[sizeIdx + 1]
     if (sizeArg === undefined || sizeArg.startsWith("--")) {
-      process.stderr.write(`--size requires a size argument\n${USAGE}\n`)
+      process.stderr.write(`--page-size requires a size argument\n${USAGE}\n`)
       return null
     }
     try {
@@ -136,6 +137,7 @@ function parseArgs(args: string[]): {
 
   const knownFlags = new Set([
     "--bookmarks",
+    "--landscape",
     "--line-numbers",
     "--page-numbers",
     "--help",
@@ -167,6 +169,7 @@ function parseArgs(args: string[]): {
     templatePath,
     options: {
       bookmarks: flags.includes("--bookmarks"),
+      landscape: flags.includes("--landscape"),
       lineNumbers: flags.includes("--line-numbers"),
       footerPageNumber: flags.includes("--page-numbers"),
       headerLabel,

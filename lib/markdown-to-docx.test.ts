@@ -843,6 +843,68 @@ describe("line numbers", () => {
   })
 })
 
+describe("landscape orientation", () => {
+  test("landscape: true sets w:orient to landscape", async () => {
+    const { zip } = await buildDocx("# Hello", { landscape: true })
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('w:orient="landscape"')
+  })
+
+  test("landscape: true swaps page width/height so width is the longer dimension", async () => {
+    const { zip } = await buildDocx("# Hello", { landscape: true })
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('<w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/>')
+  })
+
+  test("landscape not set produces portrait dimensions", async () => {
+    const { zip } = await buildDocx("# Hello")
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/>')
+  })
+
+  test("landscape: true widens the footer's right-aligned tab stop to match the wider page", async () => {
+    const { xml } = await buildDocx("# Hello", { footerLabel: "My Label", landscape: true })
+    const footer = await xml("word/footer1.xml")
+    expect(footer).toContain('w:pos="14678"')
+  })
+
+  test("landscape turns the requested page size on its side", async () => {
+    const { zip } = await buildDocx("# Hello", { pageSize: "legal", landscape: true })
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('<w:pgSz w:w="20160" w:h="12240" w:orient="landscape"/>')
+  })
+
+  test("landscape widens the footer tab stop to the rotated page width", async () => {
+    const { xml } = await buildDocx("# Hello", {
+      footerLabel: "My Label",
+      pageSize: "legal",
+      landscape: true,
+    })
+    const footer = await xml("word/footer1.xml")
+    expect(footer).toContain(`w:pos="${20160 - 1080 - 1080}"`)
+  })
+
+  test("landscape leaves a size that is already wider than tall alone", async () => {
+    const { zip } = await buildDocx("# Hello", { pageSize: "11x8.5", landscape: true })
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/>')
+  })
+
+  test("landscape caps images to the wider text column", async () => {
+    // A4 on its side is 16838 twips wide, less 2160 of margins = 9.78in of text
+    // width, so the 6in default cap still applies rather than the page width
+    const dir = mkdtempSync(join(tmpdir(), "landscape-"))
+    writeFileSync(join(dir, "wide.png"), widePng(2000, 1000))
+    const mdPath = join(dir, "doc.md")
+    writeFileSync(mdPath, "![wide](./wide.png)")
+
+    const doc = await convertMarkdownToDocx(mdPath, "", { landscape: true })
+    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc))
+    const body = await zip.file("word/document.xml")!.async("string")
+    expect(Number(body.match(/<wp:extent cx="(\d+)"/)?.[1])).toBe(576 * 9525)
+  })
+})
+
 describe("horizontal rule", () => {
   test("--- renders a paragraph with a bottom border", async () => {
     const body = await bodyXml("text\n\n---\n\nmore")
