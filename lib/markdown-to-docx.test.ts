@@ -1,10 +1,25 @@
 import { describe, test, expect } from "bun:test"
-import { writeFileSync } from "node:fs"
+import { mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { Packer } from "docx"
 import JSZip from "jszip"
 import { convertMarkdownToDocx } from "./markdown-to-docx"
+import { parsePageSize } from "./page-size"
+
+/** Minimal PNG whose IHDR declares the given dimensions — enough for probe to size it */
+function widePng(width: number, height: number): Buffer {
+  const png = Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+    0xde, 0x00, 0x00, 0x00, 0x0c, 0x49, 0x44, 0x41, 0x54, 0x08, 0xd7, 0x63, 0xf8, 0xcf, 0xc0, 0x00,
+    0x00, 0x00, 0x02, 0x00, 0x01, 0xe2, 0x21, 0xbc, 0x33, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e,
+    0x44, 0xae, 0x42, 0x60, 0x82,
+  ])
+  png.writeUInt32BE(width, 16)
+  png.writeUInt32BE(height, 20)
+  return png
+}
 
 async function buildDocx(
   markdown: string,
@@ -133,6 +148,101 @@ async function bodyXml(
   const docXml = await zip.file("word/document.xml")!.async("string")
   return docXml.match(/<w:body>(.*)<\/w:body>/s)?.[1] ?? ""
 }
+
+describe("page size", () => {
+  async function pageSizeAttrs(options: Parameters<typeof convertMarkdownToDocx>[2] = {}) {
+    const { xml } = await buildDocx("# Hello", options)
+    const doc = await xml("word/document.xml")
+    const pgSz = doc.match(/<w:pgSz [^/]*\/>/)?.[0] ?? ""
+    return {
+      width: Number(pgSz.match(/w:w="(\d+)"/)?.[1]),
+      height: Number(pgSz.match(/w:h="(\d+)"/)?.[1]),
+      orientation: pgSz.match(/w:orient="(\w+)"/)?.[1],
+    }
+  }
+
+  test("defaults to A4", async () => {
+    expect(await pageSizeAttrs()).toMatchObject({ width: 11906, height: 16838 })
+  })
+
+  test("applies a named size", async () => {
+    expect(await pageSizeAttrs({ pageSize: parsePageSize("legal") })).toMatchObject({
+      width: 12240,
+      height: 20160,
+    })
+  })
+
+  test("applies a custom size", async () => {
+    expect(await pageSizeAttrs({ pageSize: parsePageSize("9x12in") })).toMatchObject({
+      width: 12960,
+      height: 17280,
+    })
+  })
+
+  test("accepts a size spec string directly", async () => {
+    expect(await pageSizeAttrs({ pageSize: "Legal" })).toMatchObject({
+      width: 12240,
+      height: 20160,
+    })
+  })
+
+  test("rejects an invalid size spec string", async () => {
+    await expect(buildDocx("# Hello", { pageSize: "nope" })).rejects.toThrow(/Unknown page size/)
+  })
+
+  test("a taller-than-wide size is emitted as a portrait page", async () => {
+    expect((await pageSizeAttrs({ pageSize: parsePageSize("letter") })).orientation).toBe(
+      "portrait",
+    )
+  })
+
+  test("a wider-than-tall size is emitted as a landscape page", async () => {
+    const { width, height, orientation } = await pageSizeAttrs({
+      pageSize: parsePageSize("11x8.5"),
+    })
+    expect(orientation).toBe("landscape")
+    // Word expects the printed dimensions, not the pre-rotation ones
+    expect(width).toBe(15840)
+    expect(height).toBe(12240)
+  })
+
+  test("margins are unchanged by the page size", async () => {
+    const { xml } = await buildDocx("# Hello", { pageSize: parsePageSize("legal") })
+    const doc = await xml("word/document.xml")
+    expect(doc).toContain('w:top="1440"')
+    expect(doc).toContain('w:bottom="1440"')
+    expect(doc).toContain('w:left="1080"')
+    expect(doc).toContain('w:right="1080"')
+  })
+
+  test("footer tab stop tracks the page width", async () => {
+    const { xml } = await buildDocx("# Hello", {
+      footerLabel: "Label",
+      footerPageNumber: true,
+      pageSize: parsePageSize("letter"),
+    })
+    const footer = await xml("word/footer1.xml")
+    // Letter (12240) less 0.75in left + right margins
+    expect(footer).toContain(`w:pos="${12240 - 1080 - 1080}"`)
+  })
+
+  test("images are capped to the text width of a narrow page", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "page-size-"))
+    const imgPath = join(dir, "wide.png")
+    writeFileSync(imgPath, widePng(1000, 500))
+    const mdPath = join(dir, "doc.md")
+    writeFileSync(mdPath, "![wide](./wide.png)")
+
+    const doc = await convertMarkdownToDocx(mdPath, "", { pageSize: parsePageSize("4x6in") })
+    const buf = await Packer.toBuffer(doc)
+    const zip = await JSZip.loadAsync(buf)
+    const body = await zip.file("word/document.xml")!.async("string")
+
+    // 4in page less 1.5in of margins = 2.5in of text width = 240px = 2286000 EMU
+    const cx = Number(body.match(/<wp:extent cx="(\d+)"/)?.[1])
+    expect(cx).toBe(2286000)
+  })
+})
 
 describe("frontmatter", () => {
   test("YAML frontmatter is stripped from output", async () => {
@@ -756,6 +866,42 @@ describe("landscape orientation", () => {
     const { xml } = await buildDocx("# Hello", { footerLabel: "My Label", landscape: true })
     const footer = await xml("word/footer1.xml")
     expect(footer).toContain('w:pos="14678"')
+  })
+
+  test("landscape turns the requested page size on its side", async () => {
+    const { zip } = await buildDocx("# Hello", { pageSize: "legal", landscape: true })
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('<w:pgSz w:w="20160" w:h="12240" w:orient="landscape"/>')
+  })
+
+  test("landscape widens the footer tab stop to the rotated page width", async () => {
+    const { xml } = await buildDocx("# Hello", {
+      footerLabel: "My Label",
+      pageSize: "legal",
+      landscape: true,
+    })
+    const footer = await xml("word/footer1.xml")
+    expect(footer).toContain(`w:pos="${20160 - 1080 - 1080}"`)
+  })
+
+  test("landscape leaves a size that is already wider than tall alone", async () => {
+    const { zip } = await buildDocx("# Hello", { pageSize: "11x8.5", landscape: true })
+    const docXml = await zip.file("word/document.xml")!.async("string")
+    expect(docXml).toContain('<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/>')
+  })
+
+  test("landscape caps images to the wider text column", async () => {
+    // A4 on its side is 16838 twips wide, less 2160 of margins = 9.78in of text
+    // width, so the 6in default cap still applies rather than the page width
+    const dir = mkdtempSync(join(tmpdir(), "landscape-"))
+    writeFileSync(join(dir, "wide.png"), widePng(2000, 1000))
+    const mdPath = join(dir, "doc.md")
+    writeFileSync(mdPath, "![wide](./wide.png)")
+
+    const doc = await convertMarkdownToDocx(mdPath, "", { landscape: true })
+    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc))
+    const body = await zip.file("word/document.xml")!.async("string")
+    expect(Number(body.match(/<wp:extent cx="(\d+)"/)?.[1])).toBe(576 * 9525)
   })
 })
 
