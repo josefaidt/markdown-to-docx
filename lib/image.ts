@@ -1,7 +1,8 @@
 import { resolve, dirname } from "node:path"
 import probe from "probe-image-size"
 
-const MAX_IMAGE_WIDTH_PX = 96 * 6
+/** Widest an image renders by default (96 dpi), before the page's text width is taken into account */
+export const MAX_IMAGE_WIDTH_PX = 96 * 6
 
 export type SupportedImageType = "jpg" | "png" | "gif" | "bmp"
 const SUPPORTED_TYPES = new Set<string>(["jpg", "jpeg", "png", "gif", "bmp"])
@@ -31,7 +32,7 @@ function scalePx(px: number, scale: number) {
   return Math.round(px * scale)
 }
 
-async function fetchImageBuffer(url: string): Promise<ImageResult | null> {
+async function fetchImageBuffer(url: string, maxWidthPx: number): Promise<ImageResult | null> {
   try {
     const res = await fetch(url, { headers: { "User-Agent": "md-to-docx/1.0" } })
     if (!res.ok) return null
@@ -40,7 +41,7 @@ async function fetchImageBuffer(url: string): Promise<ImageResult | null> {
     if (!info) return null
     const type = mimeToType(info.mime) ?? extToType(url)
     if (!type) return null
-    const scale = Math.min(1, MAX_IMAGE_WIDTH_PX / info.width)
+    const scale = Math.min(1, maxWidthPx / info.width)
     return {
       data,
       type,
@@ -52,14 +53,14 @@ async function fetchImageBuffer(url: string): Promise<ImageResult | null> {
   }
 }
 
-async function loadLocalImage(filePath: string): Promise<ImageResult | null> {
+async function loadLocalImage(filePath: string, maxWidthPx: number): Promise<ImageResult | null> {
   try {
     const data = Buffer.from(await Bun.file(filePath).arrayBuffer())
     const info = probe.sync(data)
     if (!info) return null
     const type = mimeToType(info.mime) ?? extToType(filePath)
     if (!type) return null
-    const scale = Math.min(1, MAX_IMAGE_WIDTH_PX / info.width)
+    const scale = Math.min(1, maxWidthPx / info.width)
     return {
       data,
       type,
@@ -71,9 +72,13 @@ async function loadLocalImage(filePath: string): Promise<ImageResult | null> {
   }
 }
 
-export async function loadImage(href: string, markdownPath: string): Promise<ImageResult | null> {
+export async function loadImage(
+  href: string,
+  markdownPath: string,
+  maxWidthPx: number = MAX_IMAGE_WIDTH_PX,
+): Promise<ImageResult | null> {
   if (href.startsWith("http://") || href.startsWith("https://")) {
-    return fetchImageBuffer(href)
+    return fetchImageBuffer(href, maxWidthPx)
   }
-  return loadLocalImage(resolve(dirname(markdownPath), href))
+  return loadLocalImage(resolve(dirname(markdownPath), href), maxWidthPx)
 }

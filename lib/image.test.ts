@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { loadImage } from "./image"
+import { MAX_IMAGE_WIDTH_PX, loadImage } from "./image"
 
 // Minimal valid 1×1 RGB PNG (no external deps needed)
 const ONE_PX_PNG = Buffer.from([
@@ -13,9 +13,15 @@ const ONE_PX_PNG = Buffer.from([
   0x44, 0xae, 0x42, 0x60, 0x82,
 ])
 
-function writeTmpPng(): string {
-  const path = join(tmpdir(), `test-${Date.now()}.png`)
-  writeFileSync(path, ONE_PX_PNG)
+let pngCounter = 0
+
+/** Writes a PNG whose IHDR declares the given dimensions — enough for probe to size it */
+function writeTmpPng(width = 1, height = 1): string {
+  const png = Buffer.from(ONE_PX_PNG)
+  png.writeUInt32BE(width, 16)
+  png.writeUInt32BE(height, 20)
+  const path = join(tmpdir(), `test-${Date.now()}-${pngCounter++}.png`)
+  writeFileSync(path, png)
   return path
 }
 
@@ -42,5 +48,28 @@ describe("loadImage (local)", () => {
     const filename = imgPath.split("/").pop()!
     const result = await loadImage(`./${filename}`, join(dir, "doc.md"))
     expect(result).not.toBeNull()
+  })
+})
+
+describe("loadImage width cap", () => {
+  test("scales an oversized image down to the default 6in cap, preserving aspect ratio", async () => {
+    const imgPath = writeTmpPng(1000, 500)
+    const result = await loadImage(imgPath, imgPath)
+    expect(result!.width).toBe(MAX_IMAGE_WIDTH_PX)
+    expect(result!.height).toBe(MAX_IMAGE_WIDTH_PX / 2)
+  })
+
+  test("honours an explicit max width, for narrow pages", async () => {
+    const imgPath = writeTmpPng(1000, 500)
+    const result = await loadImage(imgPath, imgPath, 300)
+    expect(result!.width).toBe(300)
+    expect(result!.height).toBe(150)
+  })
+
+  test("never upscales an image narrower than the cap", async () => {
+    const imgPath = writeTmpPng(120, 60)
+    const result = await loadImage(imgPath, imgPath, 300)
+    expect(result!.width).toBe(120)
+    expect(result!.height).toBe(60)
   })
 })

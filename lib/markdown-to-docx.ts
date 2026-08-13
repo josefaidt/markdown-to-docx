@@ -1,3 +1,4 @@
+import type { PageSize } from "./page-size"
 import type { Tokens } from "marked"
 import {
   AlignmentType,
@@ -10,6 +11,7 @@ import {
   ImageRun,
   LineNumberRestartFormat,
   PageNumber,
+  PageOrientation,
   Paragraph,
   ShadingType,
   Tab,
@@ -26,9 +28,10 @@ import { buildNumbering, buildStyleOptions } from "./document-styles"
 import { footnote } from "./footnote"
 import { parseFrontmatter } from "./frontmatter"
 import { highlightCode, isSupportedLang } from "./highlight"
-import { loadImage } from "./image"
+import { MAX_IMAGE_WIDTH_PX, loadImage } from "./image"
 import { headingSlug, inlineTokensToRuns } from "./inline"
 import { listItemsToParagraphs } from "./list"
+import { DEFAULT_PAGE_SIZE, parsePageSize } from "./page-size"
 import { buildTable } from "./table"
 
 marked.use(footnote)
@@ -58,18 +61,27 @@ function collectImageHrefs(tokens: Tokens.Generic[]): string[] {
 async function loadInlineImages(
   tokens: Tokens.Generic[],
   markdownPath: string,
+  maxImageWidthPx: number,
 ): Promise<Map<string, import("./image").ImageResult>> {
   const hrefs = collectImageHrefs(tokens)
   const entries = await Promise.all(
-    hrefs.map(async (href) => [href, await loadImage(href, markdownPath)] as const),
+    hrefs.map(
+      async (href) => [href, await loadImage(href, markdownPath, maxImageWidthPx)] as const,
+    ),
   )
   return new Map(entries.filter((e): e is [string, import("./image").ImageResult] => e[1] !== null))
+}
+
+interface RenderOptions {
+  bookmarks: boolean
+  /** Widest an image may render, so images never overflow the text column */
+  maxImageWidthPx: number
 }
 
 async function tokensToDocx(
   tokens: Tokens.Generic[],
   markdownPath: string,
-  bookmarks = false,
+  { bookmarks, maxImageWidthPx }: RenderOptions,
 ): Promise<{ elements: Array<Paragraph | Table>; orderedRefs: string[] }> {
   const elements: Array<Paragraph | Table> = []
   const orderedRefs: string[] = []
@@ -105,7 +117,7 @@ async function tokensToDocx(
           const imgToken = inlineTokens[0]
           const url = (imgToken["href"] as string | undefined) ?? ""
           const alt = (imgToken["text"] as string | undefined) ?? ""
-          const result = url ? await loadImage(url, markdownPath) : null
+          const result = url ? await loadImage(url, markdownPath, maxImageWidthPx) : null
           if (result) {
             elements.push(
               new Paragraph({
@@ -131,7 +143,7 @@ async function tokensToDocx(
             )
           }
         } else {
-          const images = await loadInlineImages(inlineTokens, markdownPath)
+          const images = await loadInlineImages(inlineTokens, markdownPath, maxImageWidthPx)
           elements.push(
             new Paragraph({
               children: inlineTokensToRuns(inlineTokens, {}, images),
@@ -257,7 +269,7 @@ async function tokensToDocx(
       case "image": {
         const url = (token["href"] as string | undefined) ?? ""
         const alt = (token["text"] as string | undefined) ?? ""
-        const result = url ? await loadImage(url, markdownPath) : null
+        const result = url ? await loadImage(url, markdownPath, maxImageWidthPx) : null
         if (result) {
           elements.push(
             new Paragraph({
@@ -354,7 +366,24 @@ export interface ConvertOptions {
   fontSize?: number
   /** Enable automatic bookmark generation for headings */
   bookmarks?: boolean
+  /**
+   * Page size — either a spec string accepted by `parsePageSize` (a name such
+   * as `legal`, or a custom size such as `9x12in`) or explicit twip dimensions
+   * (default: A4)
+   */
+  pageSize?: PageSize | string
 }
+
+/** Moderate margins — the text column is the page width less the left and right margin */
+const PAGE_MARGIN = {
+  top: convertInchesToTwip(1),
+  bottom: convertInchesToTwip(1),
+  left: convertInchesToTwip(0.75),
+  right: convertInchesToTwip(0.75),
+}
+
+/** 1440 twips per inch / 96 px per inch */
+const TWIPS_PER_PX = 15
 
 export async function convertMarkdownToDocx(
   markdownPath: string,
@@ -364,7 +393,17 @@ export async function convertMarkdownToDocx(
   const content = await Bun.file(markdownPath).text()
   const { body, data } = parseFrontmatter(content)
   const tokens = marked.lexer(body.trimStart()) as Tokens.Generic[]
-  const { elements, orderedRefs } = await tokensToDocx(tokens, markdownPath, options.bookmarks)
+
+  const pageSize =
+    typeof options.pageSize === "string"
+      ? parsePageSize(options.pageSize)
+      : (options.pageSize ?? DEFAULT_PAGE_SIZE)
+  const textWidthTwip = pageSize.width - PAGE_MARGIN.left - PAGE_MARGIN.right
+
+  const { elements, orderedRefs } = await tokensToDocx(tokens, markdownPath, {
+    bookmarks: options.bookmarks ?? false,
+    maxImageWidthPx: Math.min(MAX_IMAGE_WIDTH_PX, Math.floor(textWidthTwip / TWIPS_PER_PX)),
+  })
 
   // CLI flags take precedence; frontmatter.title is the fallback for headerLabel
   const headerLabel =
@@ -398,8 +437,6 @@ export async function convertMarkdownToDocx(
     footerChildren.push(new TextRun({ children: [new Tab()] }))
     footerChildren.push(new TextRun({ children: [PageNumber.CURRENT] }))
   }
-  // A4 default (11906 twips wide) minus 0.75" left + 0.75" right margins (Moderate) = 9826 twips text width
-  const textWidthTwip = 11906 - 1080 - 1080
   const footer = new Footer({
     children: [
       new Paragraph({
@@ -423,12 +460,17 @@ export async function convertMarkdownToDocx(
             ? { lineNumbers: { countBy: 1, restart: LineNumberRestartFormat.CONTINUOUS } }
             : {}),
           page: {
-            margin: {
-              top: convertInchesToTwip(1),
-              bottom: convertInchesToTwip(1),
-              left: convertInchesToTwip(0.75),
-              right: convertInchesToTwip(0.75),
-            },
+            // docx swaps width and height for a landscape section, so a wide
+            // page is expressed as its portrait dimensions plus the orientation
+            size:
+              pageSize.width > pageSize.height
+                ? {
+                    width: pageSize.height,
+                    height: pageSize.width,
+                    orientation: PageOrientation.LANDSCAPE,
+                  }
+                : { width: pageSize.width, height: pageSize.height },
+            margin: PAGE_MARGIN,
           },
         },
         children: elements,

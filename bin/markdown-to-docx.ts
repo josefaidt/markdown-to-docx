@@ -1,9 +1,11 @@
 #!/usr/bin/env bun
 import type { ConvertOptions } from "../lib/markdown-to-docx"
+import type { PageSize } from "../lib/page-size"
 import { resolve, extname, basename } from "node:path"
 import { Packer } from "docx"
 import JSZip from "jszip"
 import { convertMarkdownToDocx } from "../lib/markdown-to-docx"
+import { PAGE_SIZE_NAMES, parsePageSize } from "../lib/page-size"
 import pkg from "../package.json" with { type: "json" }
 
 const USAGE = `
@@ -17,10 +19,16 @@ Options:
   --font-size <n>    Base font size in pt; all styles scale from this (default: 12)
   --footer <text>    Text to display in the bottom-left footer
   --header <text>    Text to display left-aligned in the header (skipped on the first page)
+  --size <size>      Page size, named or custom (default: a4)
   --bookmarks        Enable automatic bookmark generation for headings
   --line-numbers     Enable Word's built-in document line numbering
   --page-numbers     Add a right-aligned page number to the footer
   --template <path>  Path to a .dotx template file to load styles from
+
+Page Sizes:
+  Named             ${PAGE_SIZE_NAMES.join(", ")}
+  Custom            <width>x<height> with an optional unit: in (default), mm, cm, pt
+                    e.g. --size 9x12, --size 9x12in, --size 210x297mm
 
 Global Options:
   -h, --help         Show this help message
@@ -104,6 +112,25 @@ function parseArgs(args: string[]): {
     filteredArgs.splice(fontSizeIdx, 2)
   }
 
+  // Extract --size <size>
+  let pageSize: PageSize | undefined
+  const sizeIdx = filteredArgs.indexOf("--size")
+  if (sizeIdx !== -1) {
+    const sizeArg = filteredArgs[sizeIdx + 1]
+    if (sizeArg === undefined || sizeArg.startsWith("--")) {
+      process.stderr.write(`--size requires a size argument\n${USAGE}\n`)
+      return null
+    }
+    try {
+      pageSize = parsePageSize(sizeArg)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      process.stderr.write(`${message}\n${USAGE}\n`)
+      return null
+    }
+    filteredArgs.splice(sizeIdx, 2)
+  }
+
   const flags = filteredArgs.filter((a) => a.startsWith("-"))
   const positional = filteredArgs.filter((a) => !a.startsWith("-"))
 
@@ -145,6 +172,7 @@ function parseArgs(args: string[]): {
       headerLabel,
       footerLabel,
       fontSize,
+      pageSize,
     },
   }
 }
