@@ -152,6 +152,83 @@ jobs:
             --repo "${{ github.repository }}" \
             --draft=false
 
+  checksums:
+    name: Checksums
+    needs: [release, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      darwin-arm64: ${{ steps.sha.outputs.darwin-arm64 }}
+      darwin-x64: ${{ steps.sha.outputs.darwin-x64 }}
+      linux-arm64: ${{ steps.sha.outputs.linux-arm64 }}
+      linux-x64: ${{ steps.sha.outputs.linux-x64 }}
+    steps:
+      - name: Download release binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ needs.release.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "markdown-to-docx-*"
+      - name: Generate and publish checksums
+        id: sha
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha256sum markdown-to-docx-* > checksums.txt
+          gh release upload "${{ needs.release.outputs.tag }}" checksums.txt \
+            --repo "${{ github.repository }}" --clobber
+          # Expose each binary's SHA256 as a job output for the tap update
+          for suffix in darwin-arm64 darwin-x64 linux-arm64 linux-x64; do
+            sha=$(sha256sum "markdown-to-docx-${suffix}" | cut -d' ' -f1)
+            echo "${suffix}=${sha}" >> "$GITHUB_OUTPUT"
+          done
+
+  update-tap:
+    name: Update Homebrew tap
+    needs: [release, checksums]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source (for formula template)
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+      - name: Check out tap
+        uses: actions/checkout@v6
+        with:
+          repository: josefaidt/homebrew-tap
+          ssh-key: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+          path: tap
+      - name: Render formula
+        env:
+          TAG: ${{ needs.release.outputs.tag }}
+          SHA_DARWIN_ARM64: ${{ needs.checksums.outputs.darwin-arm64 }}
+          SHA_DARWIN_X64: ${{ needs.checksums.outputs.darwin-x64 }}
+          SHA_LINUX_ARM64: ${{ needs.checksums.outputs.linux-arm64 }}
+          SHA_LINUX_X64: ${{ needs.checksums.outputs.linux-x64 }}
+        run: |
+          mkdir -p tap/Formula
+          sed \
+            -e "s|@@TAG@@|${TAG}|g" \
+            -e "s|@@SHA_DARWIN_ARM64@@|${SHA_DARWIN_ARM64}|g" \
+            -e "s|@@SHA_DARWIN_X64@@|${SHA_DARWIN_X64}|g" \
+            -e "s|@@SHA_LINUX_ARM64@@|${SHA_LINUX_ARM64}|g" \
+            -e "s|@@SHA_LINUX_X64@@|${SHA_LINUX_X64}|g" \
+            .github/homebrew/markdown-to-docx.rb.tmpl > tap/Formula/markdown-to-docx.rb
+      - name: Commit and push
+        working-directory: tap
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/markdown-to-docx.rb
+          if git diff --cached --quiet; then
+            echo "Formula already up to date"
+            exit 0
+          fi
+          git commit -m "markdown-to-docx ${{ needs.release.outputs.tag }}"
+          git push
+
   cleanup:
     name: Cleanup failed release
     needs: [release, build, smoke-test]
