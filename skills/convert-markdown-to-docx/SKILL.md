@@ -25,17 +25,22 @@ markdown-to-docx report.md \
 
 ## Frontmatter support
 
-If the Markdown file has YAML frontmatter, `title` is used as the header label when `--header` is not provided:
+If the Markdown file has YAML frontmatter, `title` is used as the header label when `--header` is not provided, and `checkboxes` sets the task-list mode when `--checkboxes` is not provided:
 
 ```markdown
 ---
 title: My Document
+checkboxes: interactive
 ---
 
 # Introduction
 
 ...
 ```
+
+## Task lists
+
+Task-list items (`- [ ]` / `- [x]`) render as checkboxes. `--checkboxes static` (the default) writes ☐ / ☑ as text, so the checked state in the Markdown is kept. `--checkboxes interactive` writes Word checkboxes that start in the Markdown's state and can be clicked in Word — use it for checklists people will fill in.
 
 ## Normalizing links and images before conversion
 

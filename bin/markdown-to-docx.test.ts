@@ -148,3 +148,82 @@ describe("CLI --page-size with --landscape", () => {
     expect(doc).toContain('<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/>')
   })
 })
+
+describe("CLI --checkboxes", () => {
+  /** Converts a task list with the given flags and returns its document.xml */
+  async function convertTasks(markdown: string, ...args: string[]): Promise<string> {
+    const dir = mkdtempSync(join(tmpdir(), "cli-"))
+    const mdPath = join(dir, "tasks.md")
+    const docxPath = join(dir, "tasks.docx")
+    writeFileSync(mdPath, markdown)
+
+    const result = run(mdPath, docxPath, ...args)
+    expect(result.stderr.toString()).toBe("")
+    expect(result.exitCode).toBe(0)
+
+    const zip = await JSZip.loadAsync(await Bun.file(docxPath).arrayBuffer())
+    return zip.file("word/document.xml")!.async("string")
+  }
+
+  const TASKS = "- [ ] open\n- [x] done\n"
+
+  test("help documents --checkboxes and its modes", () => {
+    const help = run("--help").stdout.toString()
+    expect(help).toContain("--checkboxes <mode>")
+    expect(help).toContain("static")
+    expect(help).toContain("interactive")
+  })
+
+  test("omitting --checkboxes renders static glyphs", async () => {
+    const doc = await convertTasks(TASKS)
+    expect(doc).toContain(">☐</w:t>")
+    expect(doc).not.toContain("w14:checkbox")
+  })
+
+  test("--checkboxes interactive renders checkbox content controls", async () => {
+    const doc = await convertTasks(TASKS, "--checkboxes", "interactive")
+    expect(doc).toContain("<w14:checkbox>")
+  })
+
+  test("--checkboxes static overrides interactive frontmatter", async () => {
+    const doc = await convertTasks(
+      `---\ncheckboxes: interactive\n---\n${TASKS}`,
+      "--checkboxes",
+      "static",
+    )
+    expect(doc).not.toContain("w14:checkbox")
+  })
+
+  test("frontmatter applies when the flag is omitted", async () => {
+    const doc = await convertTasks(`---\ncheckboxes: interactive\n---\n${TASKS}`)
+    expect(doc).toContain("<w14:checkbox>")
+  })
+
+  test("an unknown mode fails with a message listing the known modes", () => {
+    const result = run("doc.md", "--checkboxes", "clickable")
+    expect(result.exitCode).toBe(1)
+    expect(result.stderr.toString()).toContain("Unknown checkbox mode: clickable")
+    expect(result.stderr.toString()).toContain("static, interactive")
+  })
+
+  test("a missing mode argument fails", () => {
+    const result = run("doc.md", "--checkboxes")
+    expect(result.exitCode).toBe(1)
+    expect(result.stderr.toString()).toContain("--checkboxes requires a mode argument")
+  })
+
+  test("a mode followed by another flag fails rather than consuming it", () => {
+    const result = run("doc.md", "--checkboxes", "--page-numbers")
+    expect(result.exitCode).toBe(1)
+    expect(result.stderr.toString()).toContain("--checkboxes requires a mode argument")
+  })
+
+  test("an invalid frontmatter value fails with an error naming the field", () => {
+    const dir = mkdtempSync(join(tmpdir(), "cli-"))
+    const mdPath = join(dir, "tasks.md")
+    writeFileSync(mdPath, `---\ncheckboxes: clickable\n---\n${TASKS}`)
+    const result = run(mdPath, join(dir, "tasks.docx"))
+    expect(result.exitCode).toBe(1)
+    expect(result.stderr.toString()).toContain('Invalid "checkboxes" in frontmatter')
+  })
+})

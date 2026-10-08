@@ -511,6 +511,183 @@ describe("lists", () => {
   })
 })
 
+describe("task lists", () => {
+  const TASKS = "- [ ] open\n- [x] done"
+
+  /** The body's paragraphs, in order */
+  async function paragraphs(
+    markdown: string,
+    options: Parameters<typeof convertMarkdownToDocx>[2] = {},
+  ) {
+    return (await bodyXml(markdown, options)).match(/<w:p>.*?<\/w:p>/gs) ?? []
+  }
+
+  function frontmatter(fields: string, markdown: string) {
+    return `---\n${fields}\n---\n${markdown}`
+  }
+
+  describe("static (default)", () => {
+    test("renders ☐ for an open item and ☑ for a done item, as text", async () => {
+      const [open, done] = await paragraphs(TASKS)
+      expect(open).toContain('<w:t xml:space="preserve">☐</w:t>')
+      expect(done).toContain('<w:t xml:space="preserve">☑</w:t>')
+    })
+
+    test("uses Segoe UI Symbol for the glyph", async () => {
+      const [open] = await paragraphs(TASKS)
+      expect(open).toContain('w:ascii="Segoe UI Symbol"')
+    })
+
+    test("emits no content controls", async () => {
+      const body = await bodyXml(TASKS)
+      expect(body).not.toContain("<w:sdt>")
+      expect(body).not.toContain("w14:checkbox")
+    })
+  })
+
+  describe("interactive", () => {
+    test("renders each item as a checkbox content control in the Markdown's state", async () => {
+      const [open, done] = await paragraphs(TASKS, { checkboxes: "interactive" })
+      expect(open).toContain("<w14:checkbox>")
+      expect(open).toContain('<w14:checked w14:val="0"/>')
+      expect(done).toContain('<w14:checked w14:val="1"/>')
+    })
+
+    test("uses ☑ and ☐ in Segoe UI Symbol for the checked and unchecked states", async () => {
+      const [open] = await paragraphs(TASKS, { checkboxes: "interactive" })
+      expect(open).toContain('<w14:checkedState w14:val="2611" w14:font="Segoe UI Symbol"/>')
+      expect(open).toContain('<w14:uncheckedState w14:val="2610" w14:font="Segoe UI Symbol"/>')
+    })
+
+    test("writes the box inside the control as a text run in the Markdown's state", async () => {
+      const [open, done] = await paragraphs(TASKS, { checkboxes: "interactive" })
+      expect(open).toMatch(/<w:sdtContent><w:r>.*>☐<\/w:t><\/w:r><\/w:sdtContent>/s)
+      expect(done).toMatch(/<w:sdtContent><w:r>.*>☑<\/w:t><\/w:r><\/w:sdtContent>/s)
+    })
+
+    test("writes no w:sym box, which LibreOffice mis-renders", async () => {
+      const body = await bodyXml(TASKS, { checkboxes: "interactive" })
+      expect(body).not.toContain("<w:sym")
+    })
+
+    test("each item has exactly one control and one box", async () => {
+      const [open = ""] = await paragraphs(TASKS, { checkboxes: "interactive" })
+      expect(open.match(/<w:sdtContent>/g)).toHaveLength(1)
+      expect(open.match(/[☐☑]/g)).toHaveLength(1)
+    })
+
+    test("each control has a w:id before w14:checkbox, as Word writes them", async () => {
+      const [open] = await paragraphs(TASKS, { checkboxes: "interactive" })
+      expect(open).toMatch(/<w:sdtPr><w:id w:val="\d+"\/><w14:checkbox>/)
+    })
+
+    test("control ids are unique within a document", async () => {
+      const body = await bodyXml("- [ ] a\n- [x] b\n  - [ ] c\n\n1. [ ] d", {
+        checkboxes: "interactive",
+      })
+      const ids = [...body.matchAll(/<w:id w:val="(\d+)"\/>/g)].map((m) => m[1])
+      expect(ids).toHaveLength(4)
+      expect(new Set(ids).size).toBe(4)
+    })
+  })
+
+  for (const checkboxes of ["static", "interactive"] as const) {
+    describe(`layout (${checkboxes})`, () => {
+      test("a bullet-list task item has no bullet; the box sits in the bullet's place", async () => {
+        const [open] = await paragraphs(TASKS, { checkboxes })
+        expect(open).not.toContain("<w:numPr>")
+        expect(open).toContain('<w:ind w:left="648" w:hanging="360"/>')
+        expect(open).toContain('w:val="ListItem"')
+      })
+
+      test("a tab separates the box from the item text", async () => {
+        const [open] = await paragraphs(TASKS, { checkboxes })
+        expect(open).toMatch(/(☐|w14:checkbox).*<w:tab\/>.*>open<\/w:t>/s)
+      })
+
+      test("the [ ] / [x] marker does not leak into the text", async () => {
+        const body = await bodyXml(TASKS, { checkboxes })
+        expect(body).not.toContain("[ ]")
+        expect(body).not.toContain("[x]")
+      })
+
+      test("inline formatting in the item text is kept", async () => {
+        const [item] = await paragraphs("- [ ] ship **today**", { checkboxes })
+        expect(item).toContain("<w:b/>")
+        expect(item).toContain(">today</w:t>")
+      })
+
+      test("a nested task item is indented one level further", async () => {
+        const [, child] = await paragraphs("- [ ] parent\n  - [x] child", { checkboxes })
+        expect(child).toContain('<w:ind w:left="1152" w:hanging="360"/>')
+      })
+
+      test("non-task items in the same list keep their bullet", async () => {
+        const [task, plain] = await paragraphs("- [ ] task\n- plain", { checkboxes })
+        expect(task).not.toContain("<w:numPr>")
+        expect(plain).toContain("<w:numPr>")
+        expect(plain).not.toContain("Segoe UI Symbol")
+      })
+
+      test("an ordered task item keeps its number, with the box before the text", async () => {
+        const [item] = await paragraphs("1. [x] first", { checkboxes })
+        expect(item).toContain("<w:numPr>")
+        expect(item).toMatch(/(☑|w14:checkbox).*<w:t xml:space="preserve"> <\/w:t>.*>first<\/w:t>/s)
+      })
+
+      test("a loose task list (blank lines between items) renders boxes", async () => {
+        const body = await bodyXml("- [ ] one\n\n- [x] two", { checkboxes })
+        expect(body).toContain(">one</w:t>")
+        expect(body).toContain(">two</w:t>")
+        expect(body).not.toContain("[ ]")
+      })
+    })
+  }
+
+  test("a list without task items is unchanged", async () => {
+    const body = await bodyXml("- alpha\n- beta")
+    expect(body).not.toContain("Segoe UI Symbol")
+    expect(body).not.toContain("<w:tab/>")
+  })
+
+  describe("mode selection", () => {
+    test("frontmatter sets the mode when no option is given", async () => {
+      const body = await bodyXml(frontmatter("checkboxes: interactive", TASKS))
+      expect(body).toContain("w14:checkbox")
+    })
+
+    test("the option takes precedence over frontmatter", async () => {
+      const body = await bodyXml(frontmatter("checkboxes: interactive", TASKS), {
+        checkboxes: "static",
+      })
+      expect(body).not.toContain("w14:checkbox")
+      expect(body).toContain(">☐</w:t>")
+    })
+
+    test("frontmatter is case-insensitive", async () => {
+      const body = await bodyXml(frontmatter("checkboxes: Interactive", TASKS))
+      expect(body).toContain("w14:checkbox")
+    })
+
+    test("an empty frontmatter value falls back to static", async () => {
+      const body = await bodyXml(frontmatter("checkboxes:", TASKS))
+      expect(body).toContain(">☐</w:t>")
+    })
+
+    test("an invalid frontmatter value fails with a message naming the field", async () => {
+      await expect(bodyXml(frontmatter("checkboxes: clickable", TASKS))).rejects.toThrow(
+        'Invalid "checkboxes" in frontmatter — Unknown checkbox mode: clickable',
+      )
+    })
+
+    test("an invalid option value fails", async () => {
+      await expect(
+        bodyXml(TASKS, { checkboxes: "clickable" as unknown as "static" }),
+      ).rejects.toThrow("Unknown checkbox mode: clickable")
+    })
+  })
+})
+
 describe("code blocks", () => {
   test("fenced code uses CodeBlock style", async () => {
     const body = await bodyXml("```js\nconst x = 1\n```")

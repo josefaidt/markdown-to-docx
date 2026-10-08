@@ -1,3 +1,4 @@
+import type { CheckboxMode } from "./checkbox"
 import type { PageSize } from "./page-size"
 import type { Tokens } from "marked"
 import {
@@ -24,6 +25,7 @@ import {
   convertInchesToTwip,
 } from "docx"
 import { marked } from "marked"
+import { DEFAULT_CHECKBOX_MODE, parseCheckboxMode } from "./checkbox"
 import { buildNumbering, buildStyleOptions } from "./document-styles"
 import { footnote } from "./footnote"
 import { parseFrontmatter } from "./frontmatter"
@@ -74,6 +76,8 @@ async function loadInlineImages(
 
 interface RenderOptions {
   bookmarks: boolean
+  /** How task-list items render their checkbox */
+  checkboxes: CheckboxMode
   /** Widest an image may render, so images never overflow the text column */
   maxImageWidthPx: number
 }
@@ -81,7 +85,7 @@ interface RenderOptions {
 async function tokensToDocx(
   tokens: Tokens.Generic[],
   markdownPath: string,
-  { bookmarks, maxImageWidthPx }: RenderOptions,
+  { bookmarks, checkboxes, maxImageWidthPx }: RenderOptions,
 ): Promise<{ elements: Array<Paragraph | Table>; orderedRefs: string[] }> {
   const elements: Array<Paragraph | Table> = []
   const orderedRefs: string[] = []
@@ -167,6 +171,7 @@ async function tokensToDocx(
             ordered,
             0,
             orderedRef,
+            checkboxes,
           )),
         )
         break
@@ -374,6 +379,12 @@ export interface ConvertOptions {
   pageSize?: PageSize | string
   /** Turn the page on its side, so the longer edge of `pageSize` runs horizontally */
   landscape?: boolean
+  /**
+   * How task-list items (`- [ ]` / `- [x]`) render their checkbox — `static`
+   * text glyphs or `interactive` Word checkboxes. Takes precedence over a
+   * `checkboxes` frontmatter field (default: static)
+   */
+  checkboxes?: CheckboxMode
 }
 
 /** Moderate margins — the text column is the page width less the left and right margin */
@@ -386,6 +397,18 @@ const PAGE_MARGIN = {
 
 /** 1440 twips per inch / 96 px per inch */
 const TWIPS_PER_PX = 15
+
+/** The option wins; a frontmatter `checkboxes` field is the fallback */
+function resolveCheckboxMode(option: CheckboxMode | undefined, frontmatter: unknown): CheckboxMode {
+  if (option !== undefined) return parseCheckboxMode(option)
+  if (frontmatter === undefined || frontmatter === null) return DEFAULT_CHECKBOX_MODE
+  try {
+    return parseCheckboxMode(frontmatter)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    throw new Error(`Invalid "checkboxes" in frontmatter — ${message}`)
+  }
+}
 
 export async function convertMarkdownToDocx(
   markdownPath: string,
@@ -405,8 +428,11 @@ export async function convertMarkdownToDocx(
   const pageSize = options.landscape ? toLandscape(requestedSize) : requestedSize
   const textWidthTwip = pageSize.width - PAGE_MARGIN.left - PAGE_MARGIN.right
 
+  const checkboxes = resolveCheckboxMode(options.checkboxes, data["checkboxes"])
+
   const { elements, orderedRefs } = await tokensToDocx(tokens, markdownPath, {
     bookmarks: options.bookmarks ?? false,
+    checkboxes,
     maxImageWidthPx: Math.min(MAX_IMAGE_WIDTH_PX, Math.floor(textWidthTwip / TWIPS_PER_PX)),
   })
 
