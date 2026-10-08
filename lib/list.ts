@@ -1,8 +1,10 @@
+import type { CheckboxMode } from "./checkbox"
 import type { Tokens } from "marked"
 import {
   BorderStyle,
   Paragraph,
   ShadingType,
+  Tab,
   Table,
   TableCell,
   TableRow,
@@ -10,6 +12,7 @@ import {
   WidthType,
   convertInchesToTwip,
 } from "docx"
+import { DEFAULT_CHECKBOX_MODE, checkboxRun } from "./checkbox"
 import { highlightCode, isSupportedLang } from "./highlight"
 import { inlineTokensToRuns } from "./inline"
 
@@ -86,6 +89,7 @@ export async function listItemsToParagraphs(
   ordered: boolean,
   level: number,
   orderedRef: string,
+  checkboxes: CheckboxMode = DEFAULT_CHECKBOX_MODE,
 ): Promise<Array<Paragraph | Table>> {
   const elements: Array<Paragraph | Table> = []
 
@@ -109,17 +113,35 @@ export async function listItemsToParagraphs(
     const inlineTokens = textTokens.flatMap(
       (t) => (t["tokens"] as Tokens.Generic[] | undefined) ?? (t["text"] ? [t] : []),
     )
+    const runs = inlineTokensToRuns(inlineTokens)
+    const numbering = { reference: ordered ? orderedRef : "bullet-numbering", level }
 
-    elements.push(
-      new Paragraph({
-        style: "ListItem",
-        children: inlineTokensToRuns(inlineTokens),
-        numbering: {
-          reference: ordered ? orderedRef : "bullet-numbering",
-          level,
-        },
-      }),
-    )
+    if (item["task"] !== true) {
+      elements.push(new Paragraph({ style: "ListItem", children: runs, numbering }))
+    } else if (ordered) {
+      // The number still counts the item, so the box goes between it and the text
+      elements.push(
+        new Paragraph({
+          style: "ListItem",
+          children: [checkboxRun(item["checked"] === true, checkboxes), new TextRun(" "), ...runs],
+          numbering,
+        }),
+      )
+    } else {
+      // The box takes the bullet's place: the hanging indent starts the line where
+      // the bullet would sit, and its implicit tab stop aligns the text with siblings
+      elements.push(
+        new Paragraph({
+          style: "ListItem",
+          indent: listIndent(level),
+          children: [
+            checkboxRun(item["checked"] === true, checkboxes),
+            new TextRun({ children: [new Tab()] }),
+            ...runs,
+          ],
+        }),
+      )
+    }
 
     for (const codeToken of codeTokens) {
       elements.push(await codeTokenToTable(codeToken, level))
@@ -140,6 +162,7 @@ export async function listItemsToParagraphs(
           (nested["ordered"] as boolean | undefined) ?? false,
           level + 1,
           orderedRef,
+          checkboxes,
         )),
       )
     }
